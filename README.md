@@ -87,6 +87,8 @@ Transformation logic is documented in Power Query query steps and auditable in F
 **Executive Overview**
 KPI tiles — Total Spend, Budget Variance, % Budget Variance, Spend vs Prior Year. Total Spend trend by month. Spend by division breakdown.
 
+![Report View](screenshots/Report%20View.jpg)
+
 **Supplier Analysis**
 Spend by supplier with concentration %, PO coverage rate, budget variance and supplier tier. Category and tier filters for focused analysis.
 
