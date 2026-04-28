@@ -27,7 +27,7 @@ Classic star schema with a single fact table and four conformed dimensions.
 
 Single-direction relationships from dimensions to fact. Foreign keys hidden from report layer. Measures isolated in a dedicated `_Measures` table.
 
-![Model View](screenshots/Model_View.jpg)
+![Model View](screenshots/Model%20View.jpg)
 
 ---
 
@@ -57,8 +57,8 @@ Two roles implemented with least-privilege design:
 
 RLS logic is intentionally simple to ensure it is auditable and testable. In production, role assignment would be managed through Entra ID security groups in Power BI Service.
 
-![RLS — Department_User role](screenshots/Security_Roles_1.jpg)
-![RLS — Finance role](screenshots/Security_Roles_2.jpg)
+![RLS — Department_User role](screenshots/Security%20Roles%201.jpg)
+![RLS — Finance role](screenshots/Security%20Roles%202.jpg)
 
 ---
 
