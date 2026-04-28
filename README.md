@@ -92,6 +92,7 @@ KPI tiles — Total Spend, Budget Variance, % Budget Variance, Spend vs Prior Ye
 **Supplier Analysis**
 Spend by supplier with concentration %, PO coverage rate, budget variance and supplier tier. Category and tier filters for focused analysis.
 
+![Supplier Analysis](screenshots/Supplier%20Analysis.jpg)
 ---
 
 ## Production Approach
