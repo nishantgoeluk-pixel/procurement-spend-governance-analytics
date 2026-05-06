@@ -98,7 +98,7 @@ Microsoft Fabric, reflecting enterprise CI/CD governance principles.
 | Stage | Workspace | Purpose |
 |---|---|---|
 | Development | `Procurement-Spend-DEV` | Active development and iteration |
-| Test | `Procurement-Spend-DEV [Test]` | Pre-production validation |
+| Test | `(no dedicated workspace — intentional for solo portfolio build)` | Pre-production validation |
 | Production | `Procurement-Spend-PROD` | Governed, promoted semantic model — live reporting |
 
 - Deployment pipeline: `Procurement-Spend-Pipeline`
@@ -178,4 +178,4 @@ exception-led leadership reporting.
 ---
 
 *Nishant Goel — Senior BI Engineer | Power BI, Tableau, Microsoft Fabric*  
-*linkedin.com/in/nish-goel*
+[linkedin.com/in/nish-goel](https://linkedin.com/in/nish-goel)
