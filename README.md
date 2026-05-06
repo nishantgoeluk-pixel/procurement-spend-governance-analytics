@@ -134,6 +134,8 @@ and supplier tier. Category and tier filters for focused analysis.
 Workspace architecture, data lineage overview, deployment pipeline summary, 
 access control design, known data limitations and version governance.
 
+![Governance notes](screenshots/Governance%20notes.jpg)
+
 ---
 
 ## Production Approach
