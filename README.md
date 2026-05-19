@@ -9,7 +9,7 @@ A procurement spend analytics solution built to production standard — from sou
 
 | Capability | Implementation |
 |---|---|
-| **Dimensional modelling** | Star schema — 1 fact table, 4 conformed dimensions, single-direction relationships, hidden foreign keys |
+| **Dimensional modelling** | Star schema — 1 fact table, 4 supporting dimensions, single-direction relationships, hidden foreign keys |
 | **DAX measure design** | 8 measures isolated in a dedicated `_Measures` table with documented business definitions |
 | **Row-Level Security** | Dynamic `USERPRINCIPALNAME()` role and static supplier filter — Entra ID group assignment in Service |
 | **Fabric deployment** | Three-stage pipeline (Dev → Test → Prod) with auditable deployment history |
@@ -34,7 +34,7 @@ This solution replaces ad-hoc reporting with a structured semantic model, clearl
 
 ## Model Design
 
-Classic star schema with a single fact table and four conformed dimensions.
+Classic star schema with a single fact table and four supporting dimensions.
 
 | Layer | Table | Purpose |
 |---|---|---|
@@ -101,7 +101,7 @@ Four KPI tiles: Total Spend, Budget Variance, % Budget Variance, Spend vs Prior 
 
 **Spend vs Budget by Period** — combo chart showing monthly actual spend (bars) against budget line. Bars show spend volatility across the year; the budget line provides the consistent reference point. 2024 full-year position: -5.1% under budget (£305K favourable variance).
 
-**Spend vs Budget by Department** — clustered bar chart. Immediately surfaces the department story: IT overspent by 8% (software renewal and cloud migration costs); Marketing underspent by 12% (campaign spend deferred). Finance, Operations and HR within tolerance.
+**Spend vs Budget by Department** — clustered bar chart. Immediately surfaces the department story: IT overspent by 8% against budget — the largest departmental variance; Marketing came in 12% under budget. Finance, Operations and HR within tolerance.
 
 Year and Division slicers placed on the page keep filtering in context — no need to navigate to a separate page for a different view.
 
@@ -125,7 +125,7 @@ The 12-month threshold is a working assumption based on typical procurement rene
 
 **Report Indicators**
 
-PO Coverage Rate is highlighted in red where the value falls below 80% — indicating that less than 80% of a supplier's spend was backed by a purchase order before invoice receipt. Pattern: Tier 3 and Near Expiry suppliers show the weakest PO discipline, consistent with lower contract governance at that tier.
+PO Coverage Rate is highlighted in red where the value falls below 80% — indicating that less than 80% of a supplier's spend was backed by a purchase order before invoice receipt. All three suppliers below threshold are Tier 3 and Inactive, consistent with lower procurement controls at that tier.
 
 Budget Variance is highlighted in red where overspend exceeds £10,000 — immaterial variances below this threshold are not flagged. This reflects a commonly used finance reporting approach where only material exceptions warrant escalation.
 
@@ -136,7 +136,7 @@ Bar charts filtered to Active suppliers only — Inactive suppliers excluded fro
 ### Page 3 — Governance Notes
 *Answers: What are the rules of this report?*
 
-Documents refresh schedule, RLS design, data lineage, deployment architecture, report indicators and known limitations in plain language. Accessible to all report users as part of the published report.
+Documents refresh schedule, RLS design, deployment architecture, report indicators and known limitations in plain language. Accessible to all report users as part of the published report.
 
 **Report Indicators documented on this page:**
 - PO Coverage Rate flagged below 80%
@@ -162,7 +162,7 @@ Three-stage Fabric deployment pipeline: Development → Test → Production.
 - Deployment history tracked with timestamp and deployer identity — auditable in Fabric Deployment History
 - Semantic model endorsed as **Promoted** in Production workspace
 - RLS tested in Power BI Service before each production deployment
-- Spend and budget reconciliation checks performed before publication
+- Pre-deployment validation includes spend totals reconciled against source extract and RLS role testing in Power BI Service
 
 ![Deployment Pipeline](<screenshots/Pipeline view.jpg>)
 ![Deployment History](<screenshots/Deployment history.jpg>)
