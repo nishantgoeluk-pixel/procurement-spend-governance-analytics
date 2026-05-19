@@ -48,7 +48,7 @@ Single-direction relationships from dimensions to fact. Foreign keys hidden from
 
 **Design rationale:** Single-direction relationships prevent ambiguous filter propagation. Isolating measures in a dedicated table enforces separation between data and calculation logic, simplifying governance and future maintenance.
 
-![Model View](screenshots/Model_View.jpg)
+![Model View](<screenshots/Model View.jpg>)
 
 ---
 
@@ -87,8 +87,8 @@ Two roles implemented with least-privilege design.
 - In production, role assignment is managed through Entra ID security groups in Power BI Service — not individual user assignment
 - RLS applies to Viewer role only — Admins, Members and Contributors bypass RLS by design
 
-![RLS — Department_User role](screenshots/Security_Roles_1.jpg)
-![RLS — Finance role](screenshots/Security_Roles_2.jpg)
+![RLS — Department_User role](<screenshots/Security Roles 1.jpg>)
+![RLS — Finance role](<screenshots/Security Roles 2.jpg>)
 
 ---
 
@@ -99,13 +99,13 @@ Two roles implemented with least-privilege design.
 
 Four KPI tiles: Total Spend, Budget Variance, % Budget Variance, Spend vs Prior Year.
 
-**Spend vs Budget by YearMonth** — combo chart showing monthly actual spend (bars) against budget line. Bars show spend volatility across the year; the budget line provides the consistent reference point. 2024 full-year position: -5.1% under budget (£305K favourable variance).
+**Spend vs Budget by Period** — combo chart showing monthly actual spend (bars) against budget line. Bars show spend volatility across the year; the budget line provides the consistent reference point. 2024 full-year position: -5.1% under budget (£305K favourable variance).
 
 **Spend vs Budget by Department** — clustered bar chart. Immediately surfaces the department story: IT overspent by 8% (software renewal and cloud migration costs); Marketing underspent by 12% (campaign spend deferred). Finance, Operations and HR within tolerance.
 
 Year and Division slicers placed on the page keep filtering in context — no need to navigate to a separate page for a different view.
 
-![Executive Overview](screenshots/Executive_overview.jpg)
+![Executive Overview](<screenshots/Executive overview.jpg>)
 
 ### Page 2 — Supplier Analysis
 *Answers: Which suppliers carry concentration or governance risk?*
@@ -131,7 +131,7 @@ Budget Variance is highlighted in red where overspend exceeds £10,000 — immat
 
 Bar charts filtered to Active suppliers only — Inactive suppliers excluded from spend and concentration analysis to avoid historical spend distorting the active supplier picture.
 
-![Supplier Analysis](screenshots/Supplier_Analysis.jpg)
+![Supplier Analysis](<screenshots/Supplier Analysis.jpg>)
 
 ### Page 3 — Governance Notes
 *Answers: What are the rules of this report?*
@@ -145,7 +145,7 @@ Documents refresh schedule, RLS design, data lineage, deployment architecture, r
 
 **Why this page exists:** In a regulated environment, report users need to understand what the data represents, how it is secured, and who to contact with questions. Embedding this in the report removes the gap between documentation and delivery.
 
-![Governance Notes](screenshots/Governance_notes.jpg)
+![Governance Notes](<screenshots/Governance notes.jpg>)
 
 ---
 
@@ -164,9 +164,9 @@ Three-stage Fabric deployment pipeline: Development → Test → Production.
 - RLS tested in Power BI Service before each production deployment
 - Spend and budget reconciliation checks performed before publication
 
-![Deployment Pipeline](screenshots/Pipeline_view.jpg)
-![Deployment History](screenshots/Deployment_history.jpg)
-![Endorsed Semantic Model](screenshots/Endorsed_semantic_model.jpg)
+![Deployment Pipeline](<screenshots/Pipeline view.jpg>)
+![Deployment History](<screenshots/Deployment history.jpg>)
+![Endorsed Semantic Model](<screenshots/Endorsed semantic model.jpg>)
 
 ---
 
@@ -186,7 +186,7 @@ Source (CSV extract)
 
 Transformation logic documented in Power Query query steps. Full lineage visible in the Fabric lineage view in the Production workspace.
 
-![Lineage View](screenshots/Lineage_view.jpg)
+![Lineage View](<screenshots/Lineage view.jpg>)
 
 ---
 
