@@ -10,10 +10,10 @@ A procurement spend analytics solution built to production standard — from sou
 | Capability | Implementation |
 |---|---|
 | **Dimensional modelling** | Star schema — 1 fact table, 4 conformed dimensions, single-direction relationships, hidden foreign keys |
-| **DAX measure design** | 7 measures isolated in a dedicated `_Measures` table with documented business definitions |
+| **DAX measure design** | 8 measures isolated in a dedicated `_Measures` table with documented business definitions |
 | **Row-Level Security** | Dynamic `USERPRINCIPALNAME()` role and static supplier filter — Entra ID group assignment in Service |
 | **Fabric deployment** | Three-stage pipeline (Dev → Test → Prod) with auditable deployment history |
-| **Semantic model governance** | Endorsed as Promoted in Production workspace — certified for trusted spend reporting |
+| **Semantic model governance** | Endorsed as Promoted in Production workspace — available as a trusted source for report builders |
 | **Data lineage** | Source → Power Query → semantic model → report layer, auditable in Fabric lineage view |
 | **Finance domain knowledge** | Budget variance analysis, supplier concentration risk, PO coverage governance, contract expiry management |
 
@@ -62,8 +62,9 @@ All measures defined in `_Measures` table. Business definitions documented in Go
 | `Total Budget` | `SUM(BudgetAmount)` | Budget allocation in filter context |
 | `Budget Variance` | `[Total Spend] - [Total Budget]` | Absolute variance — positive = overspend |
 | `% Budget Variance` | `DIVIDE([Budget Variance], [Total Budget])` | Normalised variance for cross-department comparison |
-| `PO Coverage Rate` | `DIVIDE(PO spend, [Total Spend])` | Proportion of spend supported by purchase orders |
+| `PO Coverage Rate` | `DIVIDE(CALCULATE([Total Spend], df_clean_spend[POFlag] = "Yes"), [Total Spend])` | Proportion of spend backed by a purchase order — values below 80% flagged in report |
 | `Supplier Concentration %` | `DIVIDE([Total Spend], CALCULATE([Total Spend], ALL(Dim_Supplier)))` | Each supplier's share of total spend — denominator is total spend across all suppliers, regardless of current filter context |
+| `Top 2 Supplier Concentration` | `DIVIDE(SUMX(TOPN(2, VALUES(Dim_Supplier[SupplierKey]), [Total Spend], DESC), [Total Spend]), CALCULATE([Total Spend], ALL(Dim_Supplier)))` | Combined spend share of the two largest suppliers — denominator uses ALL(Dim_Supplier) so percentage is always relative to total spend, not the filtered subset |
 | `Spend vs Prior Year` | `CALCULATE([Total Spend], SAMEPERIODLASTYEAR(Dim_Date[FullDate]))` | Year-over-year spend movement — filter-context dependent; responds to year, department and division slicers |
 
 **`DIVIDE` is used throughout** rather than division operators — prevents divide-by-zero errors and returns BLANK in empty filter contexts. This is the correct behaviour for a governed reporting model where missing data should be visible, not hidden behind an error.
@@ -80,7 +81,7 @@ Two roles implemented with least-privilege design.
 | `Finance` | `Dim_Supplier` | `[Status] = "Active"` | All departments, active suppliers only |
 
 **Design decisions:**
-- `Department_User` uses dynamic RLS via `USERPRINCIPALNAME()` — one role covers all department users without maintaining individual user filters
+- `Department_User` uses dynamic RLS via `USERPRINCIPALNAME()` — one role covers all department users without maintaining individual user filters. In a production deployment, DepartmentName values would be replaced with UPN values, or a user-to-department mapping table would be used to link each user's email address to their cost centre
 - `Finance` role applies a static supplier filter — excludes inactive/lapsed suppliers from the finance view, reducing noise and supporting data quality governance
 - RLS logic is intentionally simple to ensure it is auditable and testable
 - In production, role assignment is managed through Entra ID security groups in Power BI Service — not individual user assignment
@@ -111,27 +112,36 @@ Year and Division slicers placed on the page keep filtering in context — no ne
 
 **Total Spend by Supplier** and **Supplier Concentration %** — horizontal bar charts. Top two suppliers (Northstar Software 26.7%, BluePeak Consulting 24.2%) account for over 50% of total spend. Concentration at this level warrants active contract management.
 
-**Supplier detail table** — sorted by Contract Status (Inactive → Near Expiry → Secure), then Total Spend. Columns: SupplierName, Category, SupplierTier, Contract Status, ContractExpiry, Total Spend, PO Coverage Rate, Budget Variance.
+**Supplier detail table** — sorted by Contract Status (Inactive → Near Expiry → Secure), then Total Spend. Columns: Supplier Name, Category, Supplier Tier, Contract Status, Contract Expiry, PO Coverage Rate, Budget Variance.
+
+Total Spend is intentionally excluded from the table — it is already visible in the bar charts above. The table serves as the governance layer only: contract risk, PO discipline, and budget position.
 
 `Contract Status` is a calculated column evaluated against the reporting period end date (31 Dec 2024):
 - **Inactive** — supplier deactivated (Summit Services, Greenline Solutions, CoreWorks Ltd — all Tier 3)
 - **Near Expiry** — contract expiring within 12 months (Skyline Travel, OfficeHub Supplies, Pioneer Tech)
-- **Secure** — contract valid beyond 12 months (all Tier 1 suppliers)
+- **Secure** — contract valid beyond 12 months (all Tier 1 suppliers, plus Nimbus Training at Tier 2)
 
-The 12-month threshold reflects standard procurement renewal practice — renegotiation for Tier 1 and Tier 2 contracts typically begins 6–12 months before expiry to maintain commercial continuity and avoid contract lapse.
+The 12-month threshold is a working assumption based on typical procurement renewal lead times — renegotiation for Tier 1 and Tier 2 contracts typically begins 6–12 months before expiry to maintain commercial continuity and avoid contract lapse.
 
-PO Coverage Rate conditionally formatted — values below 85% highlighted in red. Pattern: Tier 3 and Near Expiry suppliers show weakest PO discipline, consistent with lower contract governance at that tier.
+**Report Indicators**
 
-The 85% threshold is a standard governance benchmark in procurement reporting, reflecting the expectation that the majority of managed spend is PO-backed before invoice receipt. Values below this threshold indicate retrospective or unapproved purchasing.
+PO Coverage Rate is highlighted in red where the value falls below 80% — indicating that less than 80% of a supplier's spend was backed by a purchase order before invoice receipt. Pattern: Tier 3 and Near Expiry suppliers show the weakest PO discipline, consistent with lower contract governance at that tier.
 
-Bar charts filtered to Active suppliers only — Inactive suppliers excluded from spend and concentration analysis to prevent historical spend distorting the active supplier picture.
+Budget Variance is highlighted in red where overspend exceeds £10,000 — immaterial variances below this threshold are not flagged. This reflects a commonly used finance reporting approach where only material exceptions warrant escalation.
+
+Bar charts filtered to Active suppliers only — Inactive suppliers excluded from spend and concentration analysis to avoid historical spend distorting the active supplier picture.
 
 ![Supplier Analysis](screenshots/Supplier_Analysis.jpg)
 
 ### Page 3 — Governance Notes
 *Answers: What are the rules of this report?*
 
-Documents refresh schedule, RLS design, data lineage, deployment architecture and known limitations in plain language. Accessible to all report users as part of the published report.
+Documents refresh schedule, RLS design, data lineage, deployment architecture, report indicators and known limitations in plain language. Accessible to all report users as part of the published report.
+
+**Report Indicators documented on this page:**
+- PO Coverage Rate flagged below 80%
+- Budget Variance flagged where overspend exceeds £10,000
+- Contract Status thresholds — Inactive, Near Expiry (within 12 months), Secure
 
 **Why this page exists:** In a regulated environment, report users need to understand what the data represents, how it is secured, and who to contact with questions. Embedding this in the report removes the gap between documentation and delivery.
 
@@ -147,7 +157,7 @@ Three-stage Fabric deployment pipeline: Development → Test → Production.
 |---|---|---|
 | Dev | `Procurement-Spend-DEV` | Active development and testing |
 | Test | `Procurement-Spend-DEV [Test]` | Pre-release validation |
-| Prod | `Procurement-Spend-PROD` | Certified production version |
+| Prod | `Procurement-Spend-PROD` | Promoted production version |
 
 - Deployment history tracked with timestamp and deployer identity — auditable in Fabric Deployment History
 - Semantic model endorsed as **Promoted** in Production workspace
@@ -174,7 +184,7 @@ Source (CSV extract)
         └── Report layer (3 pages)
 ```
 
-Transformation logic documented in Power Query query steps. Full lineage auditable in Fabric lineage view on promotion to a Fabric workspace.
+Transformation logic documented in Power Query query steps. Full lineage visible in the Fabric lineage view in the Production workspace.
 
 ![Lineage View](screenshots/Lineage_view.jpg)
 
