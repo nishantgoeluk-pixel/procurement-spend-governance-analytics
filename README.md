@@ -204,5 +204,5 @@ Source files are currently loaded via a local gateway connection. The next devel
 
 ---
 
-*Nishant Goel — Senior BI Engineer | Power BI, Tableau, Microsoft Fabric*
+*Senior BI Engineer | Power BI · DAX · Power Query · Semantic Modelling · Microsoft Fabric*
 *[linkedin.com/in/nish-goel](https://linkedin.com/in/nish-goel) · [github.com/nishantgoeluk-pixel](https://github.com/nishantgoeluk-pixel)*
