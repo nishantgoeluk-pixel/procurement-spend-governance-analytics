@@ -198,11 +198,5 @@ Source files are currently loaded via a local gateway connection. The next devel
 
 ---
 
-## Related
-
-[Group COO Operational Control MI](https://github.com/nishantgoeluk-pixel/group-coo-operational-control-dashboard) — multi-fact executive MI with RAG KPI logic, OKR tracking and exception-led leadership reporting.
-
----
-
 *Senior BI Engineer | Power BI · DAX · Power Query · Semantic Modelling · Microsoft Fabric*
 *[linkedin.com/in/nish-goel](https://linkedin.com/in/nish-goel) · [github.com/nishantgoeluk-pixel](https://github.com/nishantgoeluk-pixel)*
