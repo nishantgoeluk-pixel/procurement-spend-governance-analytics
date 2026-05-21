@@ -39,8 +39,8 @@ Classic star schema with a single fact table and four supporting dimensions.
 | Layer | Table | Purpose |
 |---|---|---|
 | Fact | `df_clean_spend` | Transaction-level spend, budget, variance, PO and approval detail |
-| Dimension | `Dim_Date` | Consistent time filtering — fiscal year, quarter, month, week |
-| Dimension | `Dim_Supplier` | Supplier name, tier, category, contract expiry, preferred status, contract risk classification |
+| Dimension | `Dim_Date` | Consistent time filtering — calendar year, quarter, month, week; fiscal year and fiscal quarter columns available in the semantic layer |
+| Dimension | `Dim_Supplier` | Supplier name, tier, category, contract expiry, contract risk classification |
 | Dimension | `Dim_Department` | Department, division, location, cost centre head, annual budget |
 | Dimension | `Dim_CostCategory` | Category name, budget type, spend type |
 
@@ -198,5 +198,5 @@ Source files are currently loaded via a local gateway connection. The next devel
 
 ---
 
-*Senior BI Engineer | Power BI · DAX · Power Query · Semantic Modelling · Microsoft Fabric*
+*Nishant Goel — Senior BI Engineer | Power BI · DAX · Power Query · Semantic Modelling · Microsoft Fabric*
 *[linkedin.com/in/nish-goel](https://linkedin.com/in/nish-goel) · [github.com/nishantgoeluk-pixel](https://github.com/nishantgoeluk-pixel)*
