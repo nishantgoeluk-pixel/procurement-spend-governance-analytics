@@ -11,7 +11,7 @@ A procurement spend analytics solution built to production standard — from sou
 |---|---|
 | **Dimensional modelling** | Star schema — 1 fact table, 4 supporting dimensions, single-direction relationships, hidden foreign keys |
 | **DAX measure design** | 8 measures isolated in a dedicated `_Measures` table with documented business definitions |
-| **Row-Level Security** | Dynamic `USERPRINCIPALNAME()` role and static supplier filter — Entra ID group assignment in Service |
+| **Row-Level Security** | Dynamic `USERPRINCIPALNAME()` role and static supplier filter — Entra ID group assignment in Service for production deployments |
 | **Fabric deployment** | Three-stage pipeline (Dev → Test → Prod) with auditable deployment history |
 | **Semantic model governance** | Endorsed as Promoted in Production workspace — available as a trusted source for report builders |
 | **Data lineage** | Source → Power Query → semantic model → report layer, auditable in Fabric lineage view |
