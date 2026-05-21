@@ -101,7 +101,7 @@ Four KPI tiles: Total Spend, Budget Variance, % Budget Variance, Spend vs Prior 
 
 **Spend vs Budget by Period** — combo chart showing monthly actual spend (bars) against budget line. Bars show spend volatility across the year; the budget line provides the consistent reference point. 2024 full-year position: -5.1% under budget (£305K favourable variance).
 
-**Spend vs Budget by Department** — clustered bar chart. Immediately surfaces the department story: IT is the largest overspend department; Marketing came in under budget. Finance, Operations and HR within tolerance.
+**Spend vs Budget by Department** — clustered bar chart. Immediately surfaces the department story: IT is the largest overspend department; Marketing and Finance came in under budget. Operations and HR within tolerance.
 
 Year and Division slicers placed on the page keep filtering in context — no need to navigate to a separate page for a different view.
 
