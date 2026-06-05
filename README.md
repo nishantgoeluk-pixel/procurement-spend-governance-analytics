@@ -170,6 +170,25 @@ Three-stage Fabric deployment pipeline: Development → Test → Production.
 
 ---
 
+## AI Readiness — Copilot Metadata
+
+The semantic model has been prepared for Copilot using Power BI
+Desktop's Model view.
+
+Applied across the semantic layer:
+- Table descriptions: all six tables documented with business purpose
+- Column descriptions: all queryable columns documented with
+  business definition, usage context and known limitations
+- Measure descriptions: all eight measures documented with
+  business definition, calculation rationale and usage guidance
+
+This configures the semantic model for Copilot readiness — applying
+the metadata layer that governs Copilot query quality when deployed
+on Fabric capacity, ahead of Microsoft's retirement of Power BI Q&A
+in December 2026.
+
+---
+
 ## Data Lineage
 
 ```
