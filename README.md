@@ -217,5 +217,5 @@ Source files are currently loaded via a local gateway connection. The next devel
 
 ---
 
-*Nishant Goel — Senior BI Engineer | Power BI · Semantic Modelling · Data Governance · Microsoft Fabric | PL-300 Certified*
+*Nishant Goel — Senior Power BI Engineer | Power BI · DAX · Semantic Modelling · Data Governance · Microsoft Fabric | PL-300 Certified*
 *[linkedin.com/in/nish-goel](https://linkedin.com/in/nish-goel) · [github.com/nishantgoeluk-pixel](https://github.com/nishantgoeluk-pixel)*
