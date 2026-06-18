@@ -3,6 +3,8 @@
 
 A procurement spend analytics solution built to production standard — from source data to governed report. Covers dimensional modelling, DAX measure design, row-level security, Fabric deployment pipeline and embedded governance across a finance and procurement domain. Reflects the delivery approach applied commercially at NatWest Group for £5bn+ enterprise spend reporting.
 
+> **Note on data:** This project uses a synthetic dataset (850 transactions across 12 suppliers and 5 departments) constructed to model realistic procurement patterns — supplier concentration, budget variance, contract risk and PO governance. The dataset is deliberately small so the modelling, security and governance approach can be demonstrated end to end. Enterprise-scale delivery is evidenced separately through commercial experience.
+
 ---
 
 ## What This Demonstrates
@@ -46,7 +48,7 @@ Classic star schema with a single fact table and four supporting dimensions.
 
 Single-direction relationships from dimensions to fact. Foreign keys hidden from report layer. Measures isolated in a dedicated `_Measures` table — not embedded in visuals.
 
-**Design rationale:** Single-direction relationships prevent ambiguous filter propagation. Isolating measures in a dedicated table enforces separation between data and calculation logic, simplifying governance and future maintenance.
+**Design rationale:** Single-direction relationships prevent ambiguous filter propagation. Bidirectional filtering is avoided here as it is not needed — it would only be appropriate for genuine many-to-many relationships, and brings performance and circular-dependency risks. Isolating measures in a dedicated table enforces separation between data and calculation logic, simplifying governance and future maintenance.
 
 ![Model View](<screenshots/Model View.jpg>)
 
@@ -86,6 +88,8 @@ Two roles implemented with least-privilege design.
 - RLS logic is intentionally simple to ensure it is auditable and testable
 - In production, role assignment is managed through Entra ID security groups in Power BI Service — not individual user assignment
 - RLS applies to Viewer role only — Admins, Members and Contributors bypass RLS by design
+
+**Testing:** Roles validated using View As Role in Power BI Desktop and the test view in Power BI Service. Multi-user validation with separate accounts is the production verification step, performed once Entra ID groups are assigned.
 
 ![RLS — Department_User role](<screenshots/Security Roles 1.jpg>)
 ![RLS — Finance role](<screenshots/Security Roles 2.jpg>)
@@ -155,14 +159,14 @@ Three-stage Fabric deployment pipeline: Development → Test → Production.
 
 | Stage | Workspace | Purpose |
 |---|---|---|
-| Dev | `Procurement-Spend-DEV` | Active development and testing |
-| Test | `Procurement-Spend-DEV [Test]` | Pre-release validation |
+| Dev | `Procurement-Spend-DEV` | Active development |
+| Test | `Procurement-Spend-TEST` | Pre-release validation |
 | Prod | `Procurement-Spend-PROD` | Promoted production version |
 
 - Deployment history tracked with timestamp and deployer identity — auditable in Fabric Deployment History
 - Semantic model endorsed as **Promoted** in Production workspace
 - RLS tested in Power BI Service before each production deployment
-- Pre-deployment validation includes spend totals reconciled against source extract and RLS role testing in Power BI Service
+- Pre-deployment validation includes spend totals reconciled against the source extract
 
 ![Deployment Pipeline](<screenshots/Pipeline view.jpg>)
 ![Deployment History](<screenshots/Deployment history.jpg>)
@@ -172,20 +176,14 @@ Three-stage Fabric deployment pipeline: Development → Test → Production.
 
 ## AI Readiness — Copilot Metadata
 
-The semantic model has been prepared for Copilot using Power BI
-Desktop's Model view.
+The semantic model has been prepared for Copilot using Power BI Desktop's Model view.
 
 Applied across the semantic layer:
-- Table descriptions: all six tables documented with business purpose
-- Column descriptions: all queryable columns documented with
-  business definition, usage context and known limitations
-- Measure descriptions: all eight measures documented with
-  business definition, calculation rationale and usage guidance
+- **Table descriptions** — all six tables documented with business purpose
+- **Column descriptions** — queryable columns documented with business definition, usage context and known limitations
+- **Measure descriptions** — all eight measures documented with business definition, calculation rationale and usage guidance
 
-This configures the semantic model for Copilot readiness — applying
-the metadata layer that governs Copilot query quality when deployed
-on Fabric capacity, ahead of Microsoft's retirement of Power BI Q&A
-in December 2026.
+This applies the metadata layer that governs Copilot query quality when the model is deployed on Fabric capacity — ahead of Microsoft's retirement of Power BI Q&A in late 2026. The descriptions configure the model for Copilot readiness; Copilot query execution itself requires Fabric capacity and is not enabled in this trial environment.
 
 ---
 
@@ -209,11 +207,18 @@ Transformation logic documented in Power Query query steps. Full lineage visible
 
 ---
 
-## Known Limitations
+## Known Limitations & Next Steps
 
-Budget amounts represent monthly procurement allocations distributed proportionally across transactions. Headline variance reflects the full-year position; filter by department for period-level analysis.
+**Current limitations**
+- Budget amounts represent monthly procurement allocations distributed proportionally across transactions. Headline variance reflects the full-year position; filter by department for period-level analysis.
+- Source files are loaded from CSV via a local gateway connection rather than a cloud-hosted source.
+- RLS is validated in Desktop and the Service test view; multi-user validation requires Entra ID group assignment.
 
-Source files are currently loaded via a local gateway connection. The next development step is migrating source files to SharePoint or OneLake to enable fully cloud-based scheduled refresh — consistent with how this would be configured in an enterprise environment.
+**Planned next steps**
+- **SQL source layer** — replace CSV extracts with a SQL source and publish the underlying queries (spend aggregation, budget variance by period, PO coverage by department) to demonstrate the full data stack.
+- **Cloud-hosted refresh** — migrate source files to SharePoint or OneLake to enable scheduled refresh without a gateway dependency.
+- **Incremental refresh** — apply incremental refresh policies on the fact table to reflect production-scale refresh design.
+- **Multi-user RLS validation** — assign Entra ID security groups and verify role behaviour across separate user accounts.
 
 ---
 
