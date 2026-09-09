@@ -222,5 +222,5 @@ Transformation logic documented in Power Query query steps. Full lineage visible
 
 ---
 
-*Nishant Goel — Senior BI Developer | Power BI · DAX · Semantic Modelling · Data Governance · Microsoft Fabric | PL-300 Certified · DP-600 Booked (all 5 Fabric Learning Paths complete)*
+*Nishant Goel — Senior BI Developer | Power BI & Microsoft Fabric | BI Modernisation, Semantic Modelling & DAX | Financial Services | PL-300 Certified*
 *[linkedin.com/in/nish-goel](https://linkedin.com/in/nish-goel) · [github.com/nishantgoeluk-pixel](https://github.com/nishantgoeluk-pixel)*
