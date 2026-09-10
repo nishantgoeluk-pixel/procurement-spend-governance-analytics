@@ -1,9 +1,11 @@
 # Procurement Spend Governance & Analytics
 **Power BI · Star Schema · Row-Level Security · Fabric Deployment Pipeline · Governed MI**
 
-A procurement spend analytics solution built to production standard — from source data to governed report. Covers dimensional modelling, DAX measure design, row-level security, Fabric deployment pipeline and embedded governance across a finance and procurement domain. Reflects the delivery approach applied commercially at NatWest Group for £5bn+ enterprise spend reporting.
+An independent procurement spend analytics solution built with Power BI and Microsoft Fabric, covering dimensional modelling, DAX measure design, Row-Level Security, controlled deployment and semantic-model governance.
 
-> **Note on data:** This project uses a synthetic dataset (850 transactions across 12 suppliers and 5 departments) constructed to model realistic procurement patterns — supplier concentration, budget variance, contract risk and PO governance. The dataset is deliberately small so the modelling, security and governance approach can be demonstrated end to end. Enterprise-scale delivery is evidenced separately through commercial experience.
+The project demonstrates how procurement and finance reporting can be structured around a governed semantic model rather than individual report-level calculations.
+
+> **Note on data:** This project uses a synthetic dataset (850 transactions across 12 suppliers and 5 departments) constructed to reflect realistic procurement patterns — supplier concentration, budget variance, contract risk and PO governance. The dataset is deliberately small so the modelling, security and governance approach can be reviewed end to end. Enterprise-scale delivery experience is evidenced separately through commercial BI work at NatWest Group.
 
 ---
 
@@ -13,10 +15,10 @@ A procurement spend analytics solution built to production standard — from sou
 |---|---|
 | **Dimensional modelling** | Star schema — 1 fact table, 4 supporting dimensions, single-direction relationships, hidden foreign keys |
 | **DAX measure design** | 8 measures isolated in a dedicated `_Measures` table with documented business definitions |
-| **Row-Level Security** | Dynamic `USERPRINCIPALNAME()` role and static supplier filter — Entra ID group assignment in Service for production deployments |
-| **Fabric deployment** | Three-stage pipeline (Dev → Test → Prod) with auditable deployment history |
-| **Semantic model governance** | Endorsed as Promoted in Production workspace — available as a trusted source for report builders |
-| **Data lineage** | Source → Power Query → semantic model → report layer, auditable in Fabric lineage view |
+| **Row-Level Security** | Two roles — dynamic `Department_User` via `USERPRINCIPALNAME()`, and static `Finance` role scoped to active suppliers; Entra ID group assignment documented for production |
+| **Fabric deployment** | Three-stage pipeline (Dev → Test → Prod) with deployment history |
+| **Semantic model governance** | Production semantic model endorsed as Promoted, with documented business definitions and metadata |
+| **Data lineage** | Source → Power Query → semantic model → report layer, documented through Fabric lineage |
 | **Finance domain knowledge** | Budget variance analysis, supplier concentration risk, PO coverage governance, contract expiry management |
 
 ---
@@ -48,7 +50,7 @@ Classic star schema with a single fact table and four supporting dimensions.
 
 Single-direction relationships from dimensions to fact. Foreign keys hidden from report layer. Measures isolated in a dedicated `_Measures` table — not embedded in visuals.
 
-**Design rationale:** Single-direction relationships prevent ambiguous filter propagation. Bidirectional filtering is avoided here as it is not needed — it would only be appropriate for genuine many-to-many relationships, and brings performance and circular-dependency risks. Isolating measures in a dedicated table enforces separation between data and calculation logic, simplifying governance and future maintenance.
+**Design rationale:** Single-direction relationships keep filter propagation predictable and the model easier to reason about. Bidirectional filtering was not required for this model, so it was deliberately avoided. Measures are isolated in `_Measures` to separate calculation logic from the underlying data model and simplify maintenance.
 
 ![Model View](<screenshots/Model View.jpg>)
 
@@ -245,5 +247,5 @@ Transformation logic documented in Power Query query steps. Full lineage visible
 
 ---
 
-*Nishant Goel — Senior BI Developer | Power BI · DAX · Semantic Modelling · Data Governance · Microsoft Fabric | PL-300 Certified · DP-600 (Retaking)*
+*Senior BI Developer | Power BI & Microsoft Fabric | BI Modernisation, Semantic Modelling & DAX | Financial Services | PL-300 Certified*
 *[linkedin.com/in/nish-goel](https://linkedin.com/in/nish-goel) · [github.com/nishantgoeluk-pixel](https://github.com/nishantgoeluk-pixel)*
