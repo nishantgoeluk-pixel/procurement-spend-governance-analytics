@@ -69,7 +69,7 @@ All measures defined in `_Measures` table. Business definitions documented in Go
 | `Top 2 Supplier Concentration` | `DIVIDE(SUMX(TOPN(2, VALUES(Dim_Supplier[SupplierKey]), [Total Spend], DESC), [Total Spend]), CALCULATE([Total Spend], ALL(Dim_Supplier)))` | Combined spend share of the two largest suppliers — denominator uses ALL(Dim_Supplier) so percentage is always relative to total spend, not the filtered subset |
 | `Spend vs Prior Year` | `CALCULATE([Total Spend], SAMEPERIODLASTYEAR(Dim_Date[FullDate]))` | Year-over-year spend movement — filter-context dependent; responds to year, department and division slicers |
 
-**`DIVIDE` is used throughout** rather than division operators — prevents divide-by-zero errors and returns BLANK in empty filter contexts. This is the correct behaviour for a governed reporting model where missing data should be visible, not hidden behind an error.
+**`DIVIDE` is used throughout** rather than division operators — makes denominator handling explicit and avoids uncontrolled divide-by-zero behaviour, rather than leaving it to chance.
 
 ---
 
@@ -93,6 +93,27 @@ Two roles implemented with least-privilege design.
 
 ![RLS — Department_User role](<screenshots/Security Roles 1.jpg>)
 ![RLS — Finance role](<screenshots/Security Roles 2.jpg>)
+
+---
+
+## Enterprise Use Cases & Operational Considerations
+
+Although the portfolio uses a synthetic dataset, the solution was designed around recurring procurement and finance reporting requirements rather than one-off visualisation.
+
+**Business use cases**
+- **Budget and spend exception management** — budget variance is surfaced against a defined £10K threshold to highlight material overspend requiring investigation.
+- **Procurement compliance monitoring** — PO Coverage Rate identifies areas falling below the defined 80% coverage threshold.
+- **Supplier concentration monitoring** — Supplier Concentration % and Top 2 Supplier Concentration provide visibility of dependency on individual suppliers.
+- **Contract monitoring** — supplier contract status is categorised as Secure, Near Expiry or Inactive based on the defined contract-review logic.
+- **Role-based management information** — Row-Level Security restricts departmental visibility while allowing authorised users to access the information relevant to their responsibilities.
+- **Controlled reporting releases** — the solution uses a Development → Test → Production Fabric deployment pipeline to demonstrate a structured approach to report and semantic-model changes.
+- **Semantic-model governance** — business logic is centralised through reusable measures and a dedicated `_Measures` table, supported by metadata, documented definitions, lineage and semantic-model endorsement.
+
+**Operational considerations**
+
+For a production implementation, additional operational controls would be appropriate around data quality and refresh monitoring. This could include validation of transaction volumes, duplicate or missing transaction identifiers, unmapped suppliers or departments, invalid dates and refresh status, with exceptions surfaced for investigation before reporting is consumed.
+
+The current portfolio does not claim to implement live data-quality monitoring or production refresh alerting. These are documented as considerations for a future production implementation alongside the existing limitations and next-step architecture below.
 
 ---
 
@@ -183,7 +204,7 @@ Applied across the semantic layer:
 - **Column descriptions** — queryable columns documented with business definition, usage context and known limitations
 - **Measure descriptions** — all eight measures documented with business definition, calculation rationale and usage guidance
 
-This applies the metadata layer that governs Copilot query quality when the model is deployed on Fabric capacity — ahead of Microsoft's retirement of Power BI Q&A in late 2026. The descriptions configure the model for Copilot readiness; Copilot query execution itself requires Fabric capacity and is not enabled in this trial environment.
+This applies the metadata layer that governs Copilot query quality when the model is deployed on Fabric capacity. The descriptions configure the model for Copilot readiness; Copilot query execution itself requires Fabric capacity and is not enabled in this trial environment.
 
 ---
 
@@ -213,14 +234,16 @@ Transformation logic documented in Power Query query steps. Full lineage visible
 - Budget amounts represent monthly procurement allocations distributed proportionally across transactions. Headline variance reflects the full-year position; filter by department for period-level analysis.
 - Source files are loaded from CSV via a local gateway connection rather than a cloud-hosted source.
 - RLS is validated in Desktop and the Service test view; multi-user validation requires Entra ID group assignment.
+- Data-quality checks and refresh monitoring (see Operational Considerations above) are not yet implemented in this portfolio build.
 
 **Planned next steps**
 - **SQL source layer** — replace CSV extracts with a SQL source and publish the underlying queries (spend aggregation, budget variance by period, PO coverage by department) to demonstrate the full data stack.
 - **Cloud-hosted refresh** — migrate source files to SharePoint or OneLake to enable scheduled refresh without a gateway dependency.
-- **Incremental refresh** — apply incremental refresh policies on the fact table to reflect production-scale refresh design.
+- **Incremental refresh** — evaluated as part of the target architecture for larger transactional volumes; the portfolio dataset is intentionally small enough that full refresh remains appropriate at this scale.
 - **Multi-user RLS validation** — assign Entra ID security groups and verify role behaviour across separate user accounts.
+- **Data-quality and refresh monitoring** — as outlined in Operational Considerations, for production-scale deployment.
 
 ---
 
-*Nishant Goel — Senior BI Developer | Power BI & Microsoft Fabric | BI Modernisation, Semantic Modelling & DAX | Financial Services | PL-300 Certified*
+*Nishant Goel — Senior BI Developer | Power BI · DAX · Semantic Modelling · Data Governance · Microsoft Fabric | PL-300 Certified · DP-600 (Retaking)*
 *[linkedin.com/in/nish-goel](https://linkedin.com/in/nish-goel) · [github.com/nishantgoeluk-pixel](https://github.com/nishantgoeluk-pixel)*
