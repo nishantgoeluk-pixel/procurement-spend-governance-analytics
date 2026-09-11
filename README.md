@@ -19,7 +19,7 @@ Full detail and every report page are below — click a section to expand it.
 
 | Capability | Implementation |
 |---|---|
-| **Dimensional modelling** | Star schema — 1 fact table, 5 supporting dimensions, single-direction relationships, hidden foreign keys |
+| **Dimensional modelling** | Star schema — 1 fact table, 4 analytical dimensions and 1 security mapping table, single-direction relationships, hidden foreign keys |
 | **DAX measure design** | 8 measures kept in one `_Measures` table, each with a documented business definition |
 | **Row-Level Security** | Two roles — a dynamic `Own Department` role using a user-to-department mapping table and `USERPRINCIPALNAME()`, and a static `Finance` role scoped to active suppliers only; Entra ID group assignment is documented for production use |
 | **Governed SQL layer** | Fabric Warehouse with separate staging and curated schemas, one T-SQL view, one parameterised function, and one stored procedure that checks and quarantines bad rows before they reach the semantic model |
@@ -51,7 +51,7 @@ This solution replaces ad-hoc reporting with one structured semantic model, clea
 
 Source data passes through a governed SQL layer in Fabric before it reaches the semantic model. It is not loaded straight from CSV into Power BI.
 
-**Why a Warehouse, not a Lakehouse:** the Lakehouse SQL analytics endpoint is read-only. It can create views, functions and stored procedures, but not change data (`INSERT`/`UPDATE`/`DELETE`) or change table structure (`CREATE`/`ALTER`/`DROP TABLE`). This project needs both, so it uses a Warehouse.
+**Why a Warehouse, not a Lakehouse:** the Lakehouse SQL analytics endpoint is read-only over the underlying Lakehouse tables. It can create views, functions and stored procedures, but not change data (`INSERT`/`UPDATE`/`DELETE`) or change table structure (`CREATE`/`ALTER`/`DROP TABLE`). This project needs both, so it uses a Warehouse.
 
 **Staging and curated schemas:**
 - `stg` holds the raw data exactly as it arrives — as text, unchecked. Nothing downstream reads from it directly.
@@ -79,7 +79,7 @@ stg (raw, unvalidated)
 <details>
 <summary><strong>Model Design</strong></summary>
 
-A star schema: one fact table, five supporting dimensions.
+A star schema: one fact table, four analytical dimensions, and one security mapping table.
 
 | Layer | Table | Purpose |
 |---|---|---|
@@ -130,7 +130,7 @@ Two roles, built on least-privilege access.
 
 **Design choices:**
 - `Own Department` uses a separate mapping table (`Dim_UserDepartmentMap`) instead of comparing a user's email directly to a department name. A user's email rarely matches a department name, so this is closer to how a real company would do it — usually with data from HR or a directory system.
-- `Finance` filters out inactive suppliers, which keeps the view relevant and reduces noise.
+- `Finance` filters out inactive suppliers. This is scoped for this portfolio's operational reporting scenario; a production finance/audit model would typically retain historical supplier visibility where needed, since access control should answer "who is allowed to see what," not "which records are currently useful."
 - The RLS logic is kept simple on purpose, so it stays easy to check and test.
 - In production, roles would be assigned through Entra ID security groups in Power BI Service, not to individual users.
 - RLS applies to the Viewer role only. Admins, Members and Contributors can see everything, by design.
@@ -233,7 +233,7 @@ A three-stage Fabric pipeline: Development → Test → Production.
 | Test | `Procurement-Spend-TEST` | Semantic model and report published, connected to Dev's Warehouse, refreshing correctly; RLS checked using Test as role in the Service |
 | Prod | `Procurement-Spend-PROD` | Semantic model and report published, connected to Dev's Warehouse, endorsed as **Promoted** |
 
-**A note on the architecture:** Test and Prod share Dev's Warehouse on purpose, instead of each stage running its own copy of the data layer. At this scale, one governed Warehouse with report/model promotion across Dev → Test → Prod is simpler and more standard than replicating the full data platform three times. Full data isolation per stage is the right choice for larger, regulated environments — it wasn't the right choice here.
+**A note on the architecture:** for this portfolio-scale dataset, Test and Prod deliberately share the Dev Warehouse, so the project can demonstrate artifact promotion without duplicating a small data platform three times. In a regulated production environment, I would separate environment data sources and apply environment-specific connection configuration — full per-stage data isolation is the standard pattern at that scale, and this project's shared-Warehouse approach is a deliberate simplification, not a claim that it's the more common design.
 
 - The pipeline was built with Fabric's native Deployment pipelines feature, linking all three workspaces.
 - Pre-deployment checks include reconciling spend totals against the source extract.
@@ -254,7 +254,7 @@ Applied across the model:
 - **Column descriptions** — queryable columns, with business meaning, usage notes, and known limitations
 - **Measure descriptions** — all eight measures, with business meaning, calculation logic, and usage guidance
 
-This metadata is what governs Copilot's query quality once the model runs on Fabric capacity. It makes the model Copilot-ready; actually running Copilot queries needs Fabric capacity, which isn't switched on in this trial environment.
+This metadata helps Copilot interpret the model and improves the quality of supported Copilot experiences once the model runs on Fabric capacity. It makes the model Copilot-ready; actually running Copilot queries needs Fabric capacity, which isn't switched on in this trial environment.
 
 </details>
 
@@ -266,7 +266,7 @@ Source (CSV extract)
 └── Fabric Warehouse — stg schema (text, unvalidated)
     └── usp_LoadFactSpend — cast, validate, quarantine
         ├── curated schema (typed, keyed, governed)
-        │   ├── 5 dimension tables
+        │   ├── 4 dimension tables + 1 security mapping table
         │   ├── 1 fact table
         │   ├── View, function, exceptions table
         │   └── Declared PK/FK (NOT ENFORCED)
