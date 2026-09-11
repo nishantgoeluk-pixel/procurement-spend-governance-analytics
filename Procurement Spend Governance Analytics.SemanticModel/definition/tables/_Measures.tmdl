@@ -1,0 +1,110 @@
+table _Measures
+	lineageTag: f9773879-00dc-4b44-9423-d6231df93540
+
+	/// Sum of all invoice amounts. Responds to all active filters.
+	measure 'Total Spend' = SUM(df_clean_spend[InvoiceAmount])
+		formatString: "£"#,0.0;-"£"#,0.0;"£"#,0.0
+		displayFolder: Core KPIs
+		lineageTag: f6e937ef-c571-4573-82b7-a29c6dd4c062
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-GB"}
+
+	/// Total invoice amount minus weekly budget allocation. Positive = overspend.
+	measure 'Budget Variance' = [Total Spend] - [Total Budget]
+		formatString: "£"#,0;-"£"#,0;"£"#,0
+		displayFolder: Core KPIs
+		lineageTag: d8df2993-c903-4cc3-aefb-9b2341094b5f
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-GB"}
+
+	/// Budget Variance as a percentage of total budget. Red flag threshold: >10%.
+	measure '% Budget Variance' = DIVIDE([Budget Variance], SUMX(df_clean_spend,df_clean_spend[BudgetAmount]),0)
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: Core KPIs
+		lineageTag: b036af65-1af0-4d65-8ef0-8f6443f740b8
+
+	/// Year-on-year % change. Uses SAMEPERIODLASTYEAR on Dim_Date[FullDate].
+	measure 'Spend vs Prior Year' =
+			
+			VAR CurrentSpend = [Total Spend]
+			VAR PriorYearSpend =
+			    CALCULATE(
+			        [Total Spend],
+			        SAMEPERIODLASTYEAR( Dim_Date[FullDate] )
+			    )
+			RETURN
+			    DIVIDE( CurrentSpend - PriorYearSpend, PriorYearSpend, BLANK() )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: Time Intelligence
+		lineageTag: 95dd9885-7f17-44fe-8c0e-364f36e9ccbf
+
+	/// Each supplier's share of total spend. ALL() on Dim_Supplier only.
+	measure 'Supplier Concentration %' =
+			
+			DIVIDE(
+			    [Total Spend],
+			    CALCULATE( [Total Spend], ALL( Dim_Supplier ) ),
+			    0
+			)
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: Supplier Risk
+		lineageTag: 2a6e51c9-9eb9-4099-81ce-24b5e97b1980
+
+	/// % of transactions with a Purchase Order raised. Governance compliance metric.
+	measure 'PO Coverage Rate' =
+			
+			DIVIDE(
+			    COUNTROWS( FILTER( df_clean_spend,df_clean_spend[POFlag] = "Yes" ) ),
+			    COUNTROWS( df_clean_spend ),
+			    0
+			)
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: Supplier Risk
+		lineageTag: 5a53d0b1-d22c-47cd-8d35-e45ad287d425
+
+	measure 'Total Budget' = SUM(df_clean_spend[BudgetAmount])
+		displayFolder: Core KPIs
+		lineageTag: eb272629-aae2-4146-b0e0-12116319f0e9
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Top 2 Supplier Concentration' = ```
+			
+			VAR Top2Spend =
+			    SUMX(
+			        TOPN(
+			            2,
+			            VALUES(Dim_Supplier[SupplierKey]),
+			            [Total Spend],
+			            DESC
+			        ),
+			        [Total Spend]
+			    )
+			VAR AllSpend = 
+			    CALCULATE([Total Spend], ALL(Dim_Supplier))
+			RETURN
+			    DIVIDE(Top2Spend, AllSpend)
+			```
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: Supplier Risk
+		lineageTag: b19bf5fd-19f2-49eb-8cc6-5fbcef4c050c
+
+	measure Suppliers = DISTINCTCOUNT(df_clean_spend[SupplierKey])
+		formatString: 0
+		displayFolder: Supplier Risk
+		lineageTag: c6bd5ad8-a854-4c51-bf2f-b5b5ecfa6568
+
+	partition _Measures = m
+		mode: import
+		source =
+				let
+				    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i44FAA==", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [Column1 = _t]),
+				    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Column1", type text}}),
+				    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"Column1"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

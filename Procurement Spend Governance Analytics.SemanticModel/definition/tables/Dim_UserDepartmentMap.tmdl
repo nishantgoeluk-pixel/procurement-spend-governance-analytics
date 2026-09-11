@@ -1,0 +1,30 @@
+table Dim_UserDepartmentMap
+	lineageTag: 80e90d77-eff3-424d-97e2-c3e54a7b266b
+
+	column UserPrincipalName
+		dataType: string
+		lineageTag: 5a163a64-9309-4a14-9726-7220088359cc
+		summarizeBy: none
+		sourceColumn: UserPrincipalName
+
+		annotation SummarizationSetBy = Automatic
+
+	column DepartmentName
+		dataType: string
+		lineageTag: 3d729a3c-1388-4edb-bbe5-870c3a53a95a
+		summarizeBy: none
+		sourceColumn: DepartmentName
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_UserDepartmentMap = m
+		mode: import
+		source =
+				let
+				    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i45WKs7IzCnITM9PzXHISywpTy0usTQ3MdTLz8vNTC7KL85PK9FLzs9V0lHyDFGKjQUA", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [UserPrincipalName = _t, DepartmentName = _t]),
+				    #"Changed Type" = Table.TransformColumnTypes(Source,{{"UserPrincipalName", type text}, {"DepartmentName", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,99 @@
+table 'curated vw_POCoverageBySupplier'
+	isHidden
+	lineageTag: b75fafdc-62fe-4261-8d1d-8258276d707b
+
+	column SupplierName
+		dataType: string
+		isHidden
+		lineageTag: f9ed2e87-ed58-4ff2-b73a-b6e72edfd067
+		summarizeBy: none
+		sourceColumn: SupplierName
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column SupplierTier
+		dataType: string
+		isHidden
+		lineageTag: 26954a99-11f0-45f1-a0bc-0c17477de144
+		summarizeBy: none
+		sourceColumn: SupplierTier
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Status
+		dataType: string
+		isHidden
+		lineageTag: 7c48477b-c058-4286-830d-28761f22c1f7
+		summarizeBy: none
+		sourceColumn: Status
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column TotalSpend
+		dataType: double
+		isHidden
+		lineageTag: 1c4981e8-ae84-4f2b-b64f-6cf289fe81ee
+		summarizeBy: sum
+		sourceColumn: TotalSpend
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column POBackedSpend
+		dataType: double
+		isHidden
+		lineageTag: d5299614-68d0-4cb0-9248-44dc05e34c6b
+		summarizeBy: sum
+		sourceColumn: POBackedSpend
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column POCoverageRate
+		dataType: double
+		isHidden
+		lineageTag: a91a8577-ed54-4db5-bddb-a29137a9a2fe
+		summarizeBy: sum
+		sourceColumn: POCoverageRate
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column BelowThresholdFlag
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 48a28cce-ebe7-4631-918b-2e92cd7e3385
+		summarizeBy: sum
+		sourceColumn: BelowThresholdFlag
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'curated vw_POCoverageBySupplier' = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("4u6ylbyeqdfebaheh7cypgytva-k6xwx55tfriuxkc2iuqtjzabwi.datawarehouse.fabric.microsoft.com", "Procurement-Spend-WH"),
+				    curated_vw_POCoverageBySupplier = Source{[Schema="curated",Item="vw_POCoverageBySupplier"]}[Data]
+				in
+				    curated_vw_POCoverageBySupplier
+
+	changedProperty = IsHidden
+

@@ -1,0 +1,7 @@
+role Finance
+	modelPermission: read
+
+	tablePermission Dim_Supplier = [Status] == "Active"
+
+	annotation PBI_Id = 02da8c7ae34c410da8c60de33748ba41
+

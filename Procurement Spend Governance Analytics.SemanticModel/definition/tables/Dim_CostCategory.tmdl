@@ -1,0 +1,48 @@
+table Dim_CostCategory
+	lineageTag: 2ad378c2-9a3c-48e3-b360-321ff16c1309
+
+	column CostCategoryKey
+		dataType: string
+		lineageTag: f269c94e-1f5a-4ea5-8e91-9be66ec5ae53
+		summarizeBy: none
+		sourceColumn: CostCategoryKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column CategoryName
+		dataType: string
+		lineageTag: f737d2a0-1fdd-47ba-9a28-d844fb9035f7
+		summarizeBy: none
+		sourceColumn: CategoryName
+
+		annotation SummarizationSetBy = Automatic
+
+	column SpendType
+		dataType: string
+		lineageTag: bac18be3-7eb9-4eca-ad44-6a247e173895
+		summarizeBy: none
+		sourceColumn: SpendType
+
+		annotation SummarizationSetBy = Automatic
+
+	column BudgetType
+		dataType: string
+		lineageTag: f02c5e89-72fe-4ad8-8a6c-adc71ce4fcfd
+		summarizeBy: none
+		sourceColumn: BudgetType
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_CostCategory = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("4u6ylbyeqdfebaheh7cypgytva-k6xwx55tfriuxkc2iuqtjzabwi.datawarehouse.fabric.microsoft.com", "Procurement-Spend-WH"),
+				    curated_Dim_CostCategory = Source{[Schema="curated",Item="Dim_CostCategory"]}[Data]
+				in
+				    curated_Dim_CostCategory
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

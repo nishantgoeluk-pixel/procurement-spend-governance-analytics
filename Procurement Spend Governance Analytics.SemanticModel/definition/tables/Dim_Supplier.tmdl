@@ -1,0 +1,96 @@
+table Dim_Supplier
+	lineageTag: b1d3598f-7af0-4c4f-94de-9881fc31c117
+
+	column SupplierKey
+		dataType: string
+		lineageTag: ae2d7334-af8f-48b7-bb51-115d7d9ce73c
+		summarizeBy: none
+		sourceColumn: SupplierKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Supplier Name'
+		dataType: string
+		lineageTag: a5ce05b6-b963-41c5-b016-8906b47f437a
+		summarizeBy: none
+		sourceColumn: Supplier Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column Category
+		dataType: string
+		lineageTag: 94ac8a25-f542-4e49-b3ec-f48e0680e1aa
+		summarizeBy: none
+		sourceColumn: Category
+
+		annotation SummarizationSetBy = Automatic
+
+	column Country
+		dataType: string
+		lineageTag: a0a04ff1-0e81-41f7-a53b-7b50f05cccbf
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column Status
+		dataType: string
+		lineageTag: 7372d48d-3d56-4476-a594-f3fcf872063a
+		summarizeBy: none
+		sourceColumn: Status
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Supplier Tier'
+		dataType: string
+		lineageTag: 832317b1-124f-4d53-bca7-4faf015a3369
+		summarizeBy: none
+		sourceColumn: Supplier Tier
+
+		annotation SummarizationSetBy = Automatic
+
+	column PreferredSupplier
+		dataType: string
+		lineageTag: d3afca82-e658-419c-a4e0-96c6cc4779d2
+		summarizeBy: none
+		sourceColumn: PreferredSupplier
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Contract Expiry'
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 2faa46cb-17fe-4747-8aa9-23ebf572aa52
+		summarizeBy: none
+		sourceColumn: Contract Expiry
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Contract Status'
+		dataType: string
+		lineageTag: 0deae4b3-b5a7-471e-a864-92aea6aeda56
+		summarizeBy: none
+		sourceColumn: Contract Status
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_Supplier = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("4u6ylbyeqdfebaheh7cypgytva-k6xwx55tfriuxkc2iuqtjzabwi.datawarehouse.fabric.microsoft.com", "Procurement-Spend-WH"),
+				    curated_Dim_Supplier = Source{[Schema="curated",Item="Dim_Supplier"]}[Data],
+				    #"Renamed Columns" = Table.RenameColumns(curated_Dim_Supplier,{{"SupplierTier", "Supplier Tier"}, {"SupplierName", "Supplier Name"}, {"ContractExpiry", "Contract Expiry"}}),
+				    #"Merged Queries" = Table.NestedJoin(#"Renamed Columns", {"SupplierKey"}, #"curated vw_ContractStatus_Current", {"SupplierKey"}, "curated vw_ContractStatus_Current", JoinKind.LeftOuter),
+				    #"Expanded curated vw_ContractStatus_Current" = Table.ExpandTableColumn(#"Merged Queries", "curated vw_ContractStatus_Current", {"ContractStatus"}, {"curated vw_ContractStatus_Current.ContractStatus"}),
+				    #"Renamed Columns1" = Table.RenameColumns(#"Expanded curated vw_ContractStatus_Current",{{"curated vw_ContractStatus_Current.ContractStatus", "Contract Status"}}),
+				    #"Removed Columns" = Table.RemoveColumns(#"Renamed Columns1",{"curated.Fact_Spend"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

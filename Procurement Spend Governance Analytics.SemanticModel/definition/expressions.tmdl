@@ -1,0 +1,10 @@
+expression 'curated vw_ContractStatus_Current' =
+		let
+		    Source = Sql.Database("4u6ylbyeqdfebaheh7cypgytva-k6xwx55tfriuxkc2iuqtjzabwi.datawarehouse.fabric.microsoft.com", "Procurement-Spend-WH"),
+		    curated_vw_ContractStatus_Current = Source{[Schema="curated",Item="vw_ContractStatus_Current"]}[Data]
+		in
+		    curated_vw_ContractStatus_Current
+	lineageTag: c520ab94-db15-4ba9-a2a2-0323ad4c2608
+
+	annotation PBI_ResultType = Table
+

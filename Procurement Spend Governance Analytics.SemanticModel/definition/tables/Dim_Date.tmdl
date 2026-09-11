@@ -1,0 +1,138 @@
+table Dim_Date
+	lineageTag: f66643d9-a1c1-4591-a430-e07f420ea422
+	dataCategory: Time
+
+	column DateKey
+		dataType: int64
+		formatString: 0
+		lineageTag: 08d420c1-6b3d-46b0-a64d-ce0a120bac84
+		summarizeBy: none
+		sourceColumn: DateKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column FullDate
+		dataType: dateTime
+		isKey
+		formatString: Long Date
+		lineageTag: 1412f83a-baf0-4666-a402-c03e63a92619
+		summarizeBy: none
+		sourceColumn: FullDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: f577f3a6-8d1a-4ecf-b680-061a3098b4a1
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quarter
+		dataType: string
+		lineageTag: 15819815-466b-4be1-956e-32f73b2e8c13
+		summarizeBy: none
+		sourceColumn: Quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column QuarterNum
+		dataType: int64
+		formatString: 0
+		lineageTag: c91a1d98-316f-4942-ab2d-71903c1c57e7
+		summarizeBy: none
+		sourceColumn: QuarterNum
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthName
+		dataType: string
+		lineageTag: 9f50866b-3696-4805-bb80-d83bc4f420f2
+		summarizeBy: none
+		sourceColumn: MonthName
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthNum
+		dataType: int64
+		formatString: 0
+		lineageTag: eaa5c5f2-d9e3-49da-a70c-524e2f8c6dee
+		summarizeBy: none
+		sourceColumn: MonthNum
+
+		annotation SummarizationSetBy = Automatic
+
+	column YearMonth
+		dataType: dateTime
+		formatString: mmm-yy
+		lineageTag: 6a36d349-28aa-46db-ae0e-187248fb79f5
+		summarizeBy: none
+		sourceColumn: YearMonth
+
+		changedProperty = DataType
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column WeekNum
+		dataType: int64
+		formatString: 0
+		lineageTag: c969e820-c184-415d-8e8b-0f471252c2d5
+		summarizeBy: none
+		sourceColumn: WeekNum
+
+		annotation SummarizationSetBy = Automatic
+
+	column DayOfWeek
+		dataType: string
+		lineageTag: 6a39507d-9de6-49eb-af93-c3760c447a0d
+		summarizeBy: none
+		sourceColumn: DayOfWeek
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsWeekend
+		dataType: string
+		lineageTag: a89491e7-34f8-412b-870a-94b37a45ea7c
+		summarizeBy: none
+		sourceColumn: IsWeekend
+
+		annotation SummarizationSetBy = Automatic
+
+	column FiscalYear
+		dataType: string
+		lineageTag: 3d7c109f-e394-4b10-a9fd-ac722f12a8ff
+		summarizeBy: none
+		sourceColumn: FiscalYear
+
+		annotation SummarizationSetBy = Automatic
+
+	column FiscalQuarter
+		dataType: string
+		lineageTag: 4e485408-93e7-49b6-b61c-25cc2b94a906
+		summarizeBy: none
+		sourceColumn: FiscalQuarter
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_Date = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("4u6ylbyeqdfebaheh7cypgytva-k6xwx55tfriuxkc2iuqtjzabwi.datawarehouse.fabric.microsoft.com", "Procurement-Spend-WH"),
+				    curated_Dim_Date = Source{[Schema="curated",Item="Dim_Date"]}[Data],
+				    #"Renamed Columns" = Table.RenameColumns(curated_Dim_Date,{{"CalendarYear", "Year"}})
+				in
+				    #"Renamed Columns"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

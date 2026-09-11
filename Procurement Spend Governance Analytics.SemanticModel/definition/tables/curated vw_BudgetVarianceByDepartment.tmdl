@@ -1,0 +1,88 @@
+table 'curated vw_BudgetVarianceByDepartment'
+	isHidden
+	lineageTag: a5ca2822-6c07-42b5-8f2e-0b204f0d39d2
+
+	column DepartmentName
+		dataType: string
+		isHidden
+		lineageTag: a901cc2f-9490-465d-b466-3b6e939d2469
+		summarizeBy: none
+		sourceColumn: DepartmentName
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Division
+		dataType: string
+		isHidden
+		lineageTag: f229e607-864c-4f2d-9abb-b4a699cdf5e3
+		summarizeBy: none
+		sourceColumn: Division
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column TotalSpend
+		dataType: double
+		isHidden
+		lineageTag: d40ed245-e63e-4ffb-b064-e1f56ae49e1d
+		summarizeBy: sum
+		sourceColumn: TotalSpend
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column TotalBudget
+		dataType: double
+		isHidden
+		lineageTag: 4ccf6acf-f452-4e17-96c9-ec5d15b774d7
+		summarizeBy: sum
+		sourceColumn: TotalBudget
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column BudgetVariance
+		dataType: double
+		isHidden
+		lineageTag: 2bedeed8-18cd-4647-8342-0f96aca2af9d
+		summarizeBy: sum
+		sourceColumn: BudgetVariance
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column MaterialVarianceFlag
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 093a7b84-c116-461b-9b77-dbd1c418fd92
+		summarizeBy: sum
+		sourceColumn: MaterialVarianceFlag
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'curated vw_BudgetVarianceByDepartment' = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("4u6ylbyeqdfebaheh7cypgytva-k6xwx55tfriuxkc2iuqtjzabwi.datawarehouse.fabric.microsoft.com", "Procurement-Spend-WH"),
+				    curated_vw_BudgetVarianceByDepartment = Source{[Schema="curated",Item="vw_BudgetVarianceByDepartment"]}[Data]
+				in
+				    curated_vw_BudgetVarianceByDepartment
+
+	changedProperty = IsHidden
+

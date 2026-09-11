@@ -1,0 +1,66 @@
+table Dim_Department
+	lineageTag: f7faa06a-0d76-464f-827e-511b5afc3a02
+
+	column DepartmentKey
+		dataType: string
+		lineageTag: fe086e58-66cb-4e87-afef-5a89fb475101
+		summarizeBy: none
+		sourceColumn: DepartmentKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column DepartmentName
+		dataType: string
+		lineageTag: fa487e8a-d971-4d92-870b-3d05775bf561
+		summarizeBy: none
+		sourceColumn: DepartmentName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Division
+		dataType: string
+		lineageTag: aace8e3a-37a3-4ec4-9d53-471d6a64001e
+		summarizeBy: none
+		sourceColumn: Division
+
+		annotation SummarizationSetBy = Automatic
+
+	column CostCentreHead
+		dataType: string
+		lineageTag: 0adb20fb-29b2-4a16-b545-35217b19594b
+		summarizeBy: none
+		sourceColumn: CostCentreHead
+
+		annotation SummarizationSetBy = Automatic
+
+	column Location
+		dataType: string
+		lineageTag: 139a86a8-778c-4e3a-a169-d459c98e4ecc
+		summarizeBy: none
+		sourceColumn: Location
+
+		annotation SummarizationSetBy = Automatic
+
+	column AnnualBudget
+		dataType: double
+		lineageTag: 5e735059-1f46-4a22-bc31-052ca07c808a
+		summarizeBy: sum
+		sourceColumn: AnnualBudget
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Dim_Department = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("4u6ylbyeqdfebaheh7cypgytva-k6xwx55tfriuxkc2iuqtjzabwi.datawarehouse.fabric.microsoft.com", "Procurement-Spend-WH"),
+				    curated_Dim_Department = Source{[Schema="curated",Item="Dim_Department"]}[Data]
+				in
+				    curated_Dim_Department
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

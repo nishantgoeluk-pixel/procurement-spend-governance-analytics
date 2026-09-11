@@ -1,0 +1,30 @@
+model Model
+	culture: en-GB
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-GB
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["_Measures","Dim_Date","Dim_Department","Dim_Supplier","df_clean_spend","Dim_CostCategory","curated vw_BudgetVarianceByDepartment","curated vw_ContractStatus_Current","curated vw_POCoverageBySupplier","curated vw_SupplierConcentration","Dim_UserDepartmentMap"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table _Measures
+ref table Dim_Date
+ref table Dim_Department
+ref table Dim_Supplier
+ref table df_clean_spend
+ref table Dim_CostCategory
+ref table 'curated vw_BudgetVarianceByDepartment'
+ref table 'curated vw_POCoverageBySupplier'
+ref table 'curated vw_SupplierConcentration'
+ref table Dim_UserDepartmentMap
+
+ref role 'Own Department'
+ref role Finance
+
+ref cultureInfo en-GB
+

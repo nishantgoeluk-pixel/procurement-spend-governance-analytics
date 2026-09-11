@@ -1,0 +1,28 @@
+relationship 3feb8a30-6fc0-4de6-8307-9b732b7757a7
+	fromColumn: df_clean_spend.DateKey
+	toColumn: Dim_Date.DateKey
+
+	annotation PBI_IsFromSource = FS
+
+relationship d21f4d6f-f95e-4ef5-8b91-9c472550ff2d
+	fromColumn: df_clean_spend.DepartmentKey
+	toColumn: Dim_Department.DepartmentKey
+
+	annotation PBI_IsFromSource = FS
+
+relationship a9da1f8b-5eb2-43bf-b200-01cc19430c27
+	fromColumn: df_clean_spend.SupplierKey
+	toColumn: Dim_Supplier.SupplierKey
+
+	annotation PBI_IsFromSource = FS
+
+relationship ecb32c04-1d4c-4e7c-a8b7-47cf81406f2b
+	fromColumn: df_clean_spend.CostCategoryKey
+	toColumn: Dim_CostCategory.CostCategoryKey
+
+	annotation PBI_IsFromSource = FS
+
+relationship 60493583-fe20-4699-a1c9-1732308132e9
+	fromColumn: Dim_Department.DepartmentName
+	toColumn: Dim_UserDepartmentMap.DepartmentName
+

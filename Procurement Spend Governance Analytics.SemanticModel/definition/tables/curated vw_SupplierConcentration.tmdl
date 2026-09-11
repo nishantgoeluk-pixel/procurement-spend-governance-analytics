@@ -1,0 +1,56 @@
+table 'curated vw_SupplierConcentration'
+	isHidden
+	lineageTag: 08607b3b-e441-4861-8ddd-2dc876c2e911
+
+	column SupplierName
+		dataType: string
+		isHidden
+		lineageTag: f73a8fd9-77b7-434c-bceb-aa4e207b386c
+		summarizeBy: none
+		sourceColumn: SupplierName
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column SupplierSpend
+		dataType: double
+		isHidden
+		lineageTag: 828efd0c-8e7c-4ba2-8931-b8e2f3a04a98
+		summarizeBy: sum
+		sourceColumn: SupplierSpend
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column ConcentrationPct
+		dataType: double
+		isHidden
+		lineageTag: c9b3bd1f-3fe7-434c-91ec-b4281f51cf3b
+		summarizeBy: sum
+		sourceColumn: ConcentrationPct
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition 'curated vw_SupplierConcentration' = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("4u6ylbyeqdfebaheh7cypgytva-k6xwx55tfriuxkc2iuqtjzabwi.datawarehouse.fabric.microsoft.com", "Procurement-Spend-WH"),
+				    curated_vw_SupplierConcentration = Source{[Schema="curated",Item="vw_SupplierConcentration"]}[Data]
+				in
+				    curated_vw_SupplierConcentration
+
+	changedProperty = IsHidden
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

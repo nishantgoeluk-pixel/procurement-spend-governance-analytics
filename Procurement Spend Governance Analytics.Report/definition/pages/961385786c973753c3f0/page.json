@@ -1,0 +1,84 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "961385786c973753c3f0",
+  "displayName": "Executive Overview",
+  "displayOption": "FitToPage",
+  "height": 720,
+  "width": 1280,
+  "objects": {
+    "background": [
+      {
+        "properties": {
+          "transparency": {
+            "expr": {
+              "Literal": {
+                "Value": "0D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "filterCard": [
+      {
+        "properties": {
+          "backgroundColor": {
+            "solid": {
+              "color": {
+                "expr": {
+                  "ThemeDataColor": {
+                    "ColorId": 0,
+                    "Percent": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "selector": {
+          "id": "Available"
+        }
+      }
+    ],
+    "outspacePane": [
+      {
+        "properties": {
+          "foregroundColor": {
+            "solid": {
+              "color": {
+                "expr": {
+                  "ThemeDataColor": {
+                    "ColorId": 1,
+                    "Percent": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "visualInteractions": [
+    {
+      "source": "459939486a483114f5c3",
+      "target": "693b0f778be7b246223f",
+      "type": "DataFilter"
+    },
+    {
+      "source": "262be276aa171145a8b3",
+      "target": "459939486a483114f5c3",
+      "type": "HighlightFilter"
+    },
+    {
+      "source": "459939486a483114f5c3",
+      "target": "92b742fb09c7d28a027f",
+      "type": "DataFilter"
+    },
+    {
+      "source": "459939486a483114f5c3",
+      "target": "7022d23025d6f26ba4cd",
+      "type": "DataFilter"
+    }
+  ]
+}

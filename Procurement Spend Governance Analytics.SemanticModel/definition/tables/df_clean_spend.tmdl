@@ -1,0 +1,85 @@
+table df_clean_spend
+	lineageTag: 1d48bcf9-3534-4231-8ad4-8428c0faf2d1
+
+	column TransactionID
+		dataType: string
+		lineageTag: 1a0f5854-788e-4e3d-852c-b2acbe30e9c8
+		summarizeBy: none
+		sourceColumn: TransactionID
+
+		annotation SummarizationSetBy = Automatic
+
+	column DateKey
+		dataType: int64
+		formatString: 0
+		lineageTag: eacf2b60-b422-47d5-a0f1-96e8978773ae
+		summarizeBy: none
+		sourceColumn: DateKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column SupplierKey
+		dataType: string
+		lineageTag: 7a5171f5-7da2-47ef-8b74-95c27134edcd
+		summarizeBy: none
+		sourceColumn: SupplierKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column DepartmentKey
+		dataType: string
+		lineageTag: 334b891a-518d-4dd2-ab87-a035997807ee
+		summarizeBy: none
+		sourceColumn: DepartmentKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column CostCategoryKey
+		dataType: string
+		lineageTag: 1106d41d-7c47-4308-b936-fcc714be0778
+		summarizeBy: none
+		sourceColumn: CostCategoryKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column InvoiceAmount
+		dataType: double
+		lineageTag: 40693c42-c30a-4daf-8051-6a84ed9a02c0
+		summarizeBy: sum
+		sourceColumn: InvoiceAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column BudgetAmount
+		dataType: double
+		lineageTag: 45b02fe9-c213-44bc-a8a0-c2371219de9f
+		summarizeBy: sum
+		sourceColumn: BudgetAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column POFlag
+		dataType: string
+		lineageTag: 8b31a90d-4305-46f4-a5e1-b7a1f674d90a
+		summarizeBy: none
+		sourceColumn: POFlag
+
+		annotation SummarizationSetBy = Automatic
+
+	partition df_clean_spend = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("4u6ylbyeqdfebaheh7cypgytva-k6xwx55tfriuxkc2iuqtjzabwi.datawarehouse.fabric.microsoft.com", "Procurement-Spend-WH"),
+				    curated_Fact_Spend = Source{[Schema="curated",Item="Fact_Spend"]}[Data]
+				in
+				    curated_Fact_Spend
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

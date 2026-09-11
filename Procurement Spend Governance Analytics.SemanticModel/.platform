@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "Procurement Spend Governance Analytics"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "c654305e-55fa-4532-ad87-cb3055b9ca4a"
+  }
+}
