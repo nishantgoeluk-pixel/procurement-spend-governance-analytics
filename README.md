@@ -8,7 +8,7 @@ An independent portfolio project — a governed procurement spend analytics solu
 **Why this matters:**
 - Data is validated and governed in a Fabric SQL Warehouse *before* it reaches Power BI — not loaded straight from CSV, with invalid rows automatically quarantined rather than silently dropped or loaded
 - Row-Level Security uses a realistic mapping-table pattern, tested against known values (not just visually checked)
-- Every threshold and definition (budget variance, PO coverage, contract status) has a single business-logic source of truth in the SQL layer, with DAX measures in `_Measures` providing the equivalent report-facing calculation for the semantic model
+- Contract status is defined once in the SQL layer (`fn_ContractStatus`) as the single source of truth; budget variance and PO coverage thresholds are defined in DAX measures in `_Measures`
 
 Full write-up, architecture, and every other report page below — click to expand any section.
 
@@ -22,8 +22,8 @@ Full write-up, architecture, and every other report page below — click to expa
 | **Dimensional modelling** | Star schema — 1 fact table, 4 supporting dimensions, single-direction relationships, hidden foreign keys |
 | **DAX measure design** | 8 measures isolated in a dedicated `_Measures` table with documented business definitions |
 | **Row-Level Security** | Two roles — dynamic `Own Department` via a user-to-department mapping table matched to `USERPRINCIPALNAME()`, and static `Finance` role scoped to active suppliers; Entra ID group assignment documented for production |
-| **Governed SQL layer** | Fabric Warehouse with staging/curated schema separation, T-SQL views, a parameterised function, and a stored procedure that validates and quarantines invalid rows before they reach the semantic model |
-| **Fabric deployment** | Three-stage pipeline (Dev → Test → Prod) with deployment history |
+| **Governed SQL layer** | Fabric Warehouse with staging/curated schema separation, a T-SQL view, a parameterised function, and a stored procedure that validates and quarantines invalid rows before they reach the semantic model |
+| **Fabric deployment** | Three-stage pipeline (Dev → Test → Prod) using Fabric's native Deployment pipelines feature, with Test and Prod sharing Dev's Warehouse as a single governed data source; Prod semantic model endorsed as Promoted |
 | **Semantic model governance** | Production semantic model endorsed as Promoted, with documented business definitions and metadata |
 | **Data lineage** | Source → Power Query → semantic model → report layer, documented through Fabric lineage |
 | **Finance domain knowledge** | Budget variance analysis, supplier concentration risk, PO coverage governance, contract expiry management |
@@ -37,10 +37,12 @@ Finance and Procurement teams need a trusted, auditable view of spend across sup
 
 This solution replaces ad-hoc reporting with a structured semantic model, clearly defined measures, role-based access and documented governance — so teams can independently explore spending patterns with confidence in the numbers.
 
-**The report answers three questions:**
-- Are we on budget, and which departments are driving variance?
-- Which suppliers represent concentration or contract renewal risk?
-- Is our procurement process governed — are purchases approved and PO-backed?
+**The solution supports three levels of decision-making:**
+- **Monitor** — are we on budget, and where is spend moving?
+- **Identify risk** — which suppliers, contracts or purchasing behaviours require attention?
+- **Govern** — are purchases compliant with procurement controls and access policies?
+
+*Future decision-support extension: the governed semantic model built here could serve as the foundation for supplier risk scoring — combining existing concentration, contract-expiry, PO-coverage and budget-variance measures into a single risk indicator — not yet built in this portfolio version.*
 
 </details>
 
@@ -57,12 +59,17 @@ Source data is processed through a governed SQL layer in Fabric before it ever r
 
 **What the SQL layer does:**
 - **`fn_ContractStatus`** — a parameterised inline table-valued function classifying suppliers as Secure, Near Expiry or Inactive as of any given date, rather than a fixed calculated column baked to one date
-- **Governed views** — `vw_BudgetVarianceByDepartment`, `vw_POCoverageBySupplier`, `vw_SupplierConcentration` apply the same £10K variance and 80% PO coverage thresholds used in the report — the SQL layer's source of truth, with `_Measures` providing the equivalent DAX calculation for the semantic model
 - **`usp_LoadFactSpend`** — validates and casts staged data, quarantining rows that fail type conversion or reference an unknown dimension key into a `Fact_Spend_Exceptions` table with a specific reason, rather than silently dropping or silently loading invalid data
-- **Declared, unenforced keys** — `PRIMARY KEY`/`FOREIGN KEY ... NOT ENFORCED` constraints document the model's structure and support the query optimiser, even though Fabric Warehouse doesn't validate them at write time
+- **Declared, unenforced keys** — `PRIMARY KEY`/`FOREIGN KEY ... NOT ENFORCED` constraints document intended relational integrity and model structure, even though Fabric Warehouse doesn't validate them at write time
 
 **Tested, not just built:** the quarantine logic was verified by deliberately inserting a row with an invalid date and an unknown supplier key — it was correctly caught and routed to the exceptions table, with the curated fact table unaffected.
 
+<pre>
+stg (raw, unvalidated)
+    └── usp_LoadFactSpend
+        ├── valid   → curated.Fact_Spend
+        └── invalid → curated.Fact_Spend_Exceptions (with reason)
+</pre>
 
 ![Warehouse Object Explorer](<screenshots/Warehouse object explorer.jpg>)
 ![Exception Handling Proof](<screenshots/Exception test.jpg>)
@@ -170,6 +177,8 @@ Four KPI tiles: Total Spend, Budget Variance, % Budget Variance, Spend vs Prior 
 
 Year and Division slicers placed on the page keep filtering in context — no need to navigate to a separate page for a different view.
 
+![Executive Overview](<screenshots/Executive overview.jpg>)
+
 ### Page 2 — Supplier Analysis
 *Answers: Which suppliers carry concentration or governance risk?*
 
@@ -217,20 +226,19 @@ Documents refresh schedule, RLS design, deployment architecture, report indicato
 
 Three-stage Fabric deployment pipeline: Development → Test → Production.
 
-| Stage | Workspace | Purpose |
+| Stage | Workspace | Status |
 |---|---|---|
-| Dev | `Procurement-Spend-DEV` | Active development |
-| Test | `Procurement-Spend-TEST` | Pre-release validation |
-| Prod | `Procurement-Spend-PROD` | Promoted production version |
+| Dev | `Procurement-Spend-DEV` | Warehouse, Copy job, semantic model and report — fully built, loaded and validated |
+| Test | `Procurement-Spend-TEST` | Semantic model and report published, connected to Dev's Warehouse, refreshing successfully; RLS validated using Test as role in the Service |
+| Prod | `Procurement-Spend-PROD` | Semantic model and report published, connected to Dev's Warehouse, semantic model endorsed as **Promoted** |
 
-- Deployment history tracked with timestamp and deployer identity — auditable in Fabric Deployment History
-- Semantic model endorsed as **Promoted** in Production workspace
-- RLS tested in Power BI Service before each production deployment
+**Architecture note:** Test and Prod deliberately share Dev's Warehouse as a single source of truth, rather than each stage running its own duplicated copy of the data layer. For a project at this scale, one governed Warehouse with report/model promotion across Dev → Test → Prod is a simpler, more standard pattern than replicating the full data platform per stage — full per-stage data isolation is a valid pattern for larger, regulated environments, but wasn't the right architectural choice here.
+
+- Deployment pipeline created using Fabric's native Deployment pipelines feature, linking all three workspaces
 - Pre-deployment validation includes spend totals reconciled against the source extract
+- Row-Level Security tested directly in the Service using Test as role for both `Own Department` and `Finance`, not just Desktop's View As Role
 
 ![Deployment Pipeline](<screenshots/Pipeline view.jpg>)
-![Deployment History](<screenshots/Deployment history.jpg>)
-![Endorsed Semantic Model](<screenshots/Endorsed semantic model.jpg>)
 
 </details>
 
@@ -251,6 +259,21 @@ This applies the metadata layer that governs Copilot query quality when the mode
 <details>
 <summary><strong>Data Lineage</strong></summary>
 
+<pre>
+Source (CSV extract)
+└── Fabric Warehouse — stg schema (text, unvalidated)
+    └── usp_LoadFactSpend — cast, validate, quarantine
+        ├── curated schema (typed, keyed, governed)
+        │   ├── 4 dimension tables
+        │   ├── 1 fact table
+        │   ├── View, function, exceptions table
+        │   └── Declared PK/FK (NOT ENFORCED)
+        └── Fact_Spend_Exceptions (invalid rows, with reason)
+            └── Power BI semantic model (Import)
+                ├── Single-direction relationships
+                ├── Row-Level Security
+                └── Report layer (3 pages)
+</pre>
 
 Transformation logic documented in Power Query query steps. Full lineage visible in the Fabric lineage view in the Production workspace.
 
@@ -265,14 +288,15 @@ Transformation logic documented in Power Query query steps. Full lineage visible
 - Budget amounts represent monthly procurement allocations distributed proportionally across transactions. Headline variance reflects the full-year position; filter by department for period-level analysis.
 - Source files are loaded from CSV via Fabric Copy job into a text-only staging layer, then cast and validated in SQL — not yet a cloud-hosted, continuously-refreshing source.
 - `Dim_UserDepartmentMap` is currently a small manually-entered table, not yet sourced from the Warehouse or an HR/directory system.
-- RLS is validated in Desktop using View As Role; multi-user validation with separate accounts requires Entra ID group assignment.
+- RLS is validated using View As Role in Desktop and Test as role in the Service, for an authorised department user; cross-department denial and unmapped-user scenarios are not yet separately documented. Multi-user validation with separate accounts requires Entra ID group assignment.
 - The project is not yet under Git version control — currently `.pbix` only, not `.pbip`.
 - Refresh is manual; no scheduled/automated refresh is currently configured.
 
 **Delivered since the initial build**
-- **SQL source layer** — Fabric Warehouse with staging/curated schemas, governed views, a parameterised function, and a stored procedure. Replaces the original CSV → Power Query-only path.
+- **SQL source layer** — Fabric Warehouse with staging/curated schemas, a governed view, a parameterised function, and a stored procedure. Replaces the original CSV → Power Query-only path.
 - **Data-quality quarantine** — `usp_LoadFactSpend` validates and casts staged data, routing invalid rows to `Fact_Spend_Exceptions` with a specific reason. Tested by deliberately inserting an invalid row and confirming it was correctly caught, not just assumed to work.
 - **RLS upgraded** — `Own Department` (formerly `Department_User`) now uses a user-to-department mapping table rather than a direct name comparison, a more realistic production pattern.
+- **Deployment pipeline completed** — all three stages (Dev/Test/Prod) publishing and refreshing successfully against a shared Warehouse, with the Prod semantic model endorsed as Promoted and RLS validated in the Service.
 
 **Planned next steps**
 - **Git and `.pbip`** — bring the project under version control, replacing `.pbix`-only with a Git-tracked `.pbip` project.
@@ -294,7 +318,7 @@ Transformation logic documented in Power Query query steps. Full lineage visible
 | Exception quarantine over silent drop | Preserves invalid records and their specific failure reason for investigation, rather than losing them |
 | Parameterised `fn_ContractStatus` over a fixed calculated column | Works for any reporting date; the first version hard-coded one date and had to be corrected |
 | Mapping-table RLS over direct name comparison | Separates user identity from department logic — more realistic than assuming a username matches a department name |
-| Declared, unenforced PK/FK | Not validated at write time in Fabric Warehouse, but documents the model's structure and aids the query optimiser |
+| Declared, unenforced PK/FK | Documents intended relational integrity and model structure; constraints are declared `NOT ENFORCED` because Fabric Warehouse does not enforce them at write time |
 | Dedicated `_Measures` table | Separates DAX calculation logic from the physical data model |
 | Dev → Test → Prod pipeline | Demonstrates controlled promotion rather than direct changes to production |
 
