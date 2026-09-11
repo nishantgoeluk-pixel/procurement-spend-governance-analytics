@@ -88,6 +88,7 @@ Classic star schema with a single fact table and four supporting dimensions.
 | Dimension | `Dim_Supplier` | Supplier name, tier, category, contract expiry, contract risk classification |
 | Dimension | `Dim_Department` | Department, division, location, cost centre head, annual budget |
 | Dimension | `Dim_CostCategory` | Category name, budget type, spend type |
+| Dimension | `Dim_UserDepartmentMap` | User-to-department lookup supporting `Own Department` RLS — maps `UserPrincipalName` to `DepartmentName` |
 
 Single-direction relationships from dimensions to fact. Foreign keys hidden from report layer. Measures isolated in a dedicated `_Measures` table — not embedded in visuals.
 
