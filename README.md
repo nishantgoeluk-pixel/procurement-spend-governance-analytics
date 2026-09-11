@@ -239,6 +239,7 @@ Three-stage Fabric deployment pipeline: Development → Test → Production.
 - Row-Level Security tested directly in the Service using Test as role for both `Own Department` and `Finance`, not just Desktop's View As Role
 
 ![Deployment Pipeline](<screenshots/Pipeline view.jpg>)
+![Endorsed Semantic Model](<screenshots/Endorsed semantic model.jpg>)
 
 </details>
 
@@ -289,7 +290,6 @@ Transformation logic documented in Power Query query steps. Full lineage visible
 - Source files are loaded from CSV via Fabric Copy job into a text-only staging layer, then cast and validated in SQL — not yet a cloud-hosted, continuously-refreshing source.
 - `Dim_UserDepartmentMap` is currently a small manually-entered table, not yet sourced from the Warehouse or an HR/directory system.
 - RLS is validated using View As Role in Desktop and Test as role in the Service, for an authorised department user; cross-department denial and unmapped-user scenarios are not yet separately documented. Multi-user validation with separate accounts requires Entra ID group assignment.
-- The project is not yet under Git version control — currently `.pbix` only, not `.pbip`.
 - Refresh is manual; no scheduled/automated refresh is currently configured.
 
 **Delivered since the initial build**
@@ -297,9 +297,9 @@ Transformation logic documented in Power Query query steps. Full lineage visible
 - **Data-quality quarantine** — `usp_LoadFactSpend` validates and casts staged data, routing invalid rows to `Fact_Spend_Exceptions` with a specific reason. Tested by deliberately inserting an invalid row and confirming it was correctly caught, not just assumed to work.
 - **RLS upgraded** — `Own Department` (formerly `Department_User`) now uses a user-to-department mapping table rather than a direct name comparison, a more realistic production pattern.
 - **Deployment pipeline completed** — all three stages (Dev/Test/Prod) publishing and refreshing successfully against a shared Warehouse, with the Prod semantic model endorsed as Promoted and RLS validated in the Service.
+- **Version control added** — the Dev workspace is connected to Git, syncing Fabric items (Warehouse, semantic model, report) in `.pbip` format rather than `.pbix`-only.
 
 **Planned next steps**
-- **Git and `.pbip`** — bring the project under version control, replacing `.pbix`-only with a Git-tracked `.pbip` project.
 - **Cloud-hosted, scheduled refresh** — move from manual refresh to a configured Fabric refresh schedule.
 - **Incremental refresh** — evaluated as part of the target architecture for larger transactional volumes; the portfolio dataset is intentionally small enough that full refresh remains appropriate at this scale.
 - **Multi-user RLS validation** — assign Entra ID security groups and verify role behaviour across separate user accounts.
@@ -326,5 +326,5 @@ Transformation logic documented in Power Query query steps. Full lineage visible
 
 ---
 
-*Nishant Goel — Senior BI Developer | Power BI · DAX · Semantic Modelling · Data Governance · Microsoft Fabric | PL-300 Certified · DP-600 (Retaking)*
+*Senior BI Developer | Power BI & Microsoft Fabric | BI Modernisation, Semantic Modelling & DAX | Financial Services | PL-300 Certified*
 *[linkedin.com/in/nish-goel](https://linkedin.com/in/nish-goel) · [github.com/nishantgoeluk-pixel](https://github.com/nishantgoeluk-pixel)*
