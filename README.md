@@ -1,228 +1,3 @@
-# Procurement Spend Governance & Analytics
-**Power BI · Star Schema · Row-Level Security · Fabric Deployment Pipeline · Governed MI**
-
-An independent procurement spend analytics solution built with Power BI and Microsoft Fabric, covering dimensional modelling, DAX measure design, Row-Level Security, controlled deployment and semantic-model governance.
-
-The project demonstrates how procurement and finance reporting can be structured around a governed semantic model rather than individual report-level calculations.
-
-> **Note on data:** This project uses a synthetic dataset (850 transactions across 12 suppliers and 5 departments) constructed to reflect realistic procurement patterns — supplier concentration, budget variance, contract risk and PO governance. The dataset is deliberately small so the modelling, security and governance approach can be reviewed end to end. Enterprise-scale delivery experience is evidenced separately through commercial BI work at NatWest Group.
-
----
-
-## What This Demonstrates
-
-| Capability | Implementation |
-|---|---|
-| **Dimensional modelling** | Star schema — 1 fact table, 4 supporting dimensions, single-direction relationships, hidden foreign keys |
-| **DAX measure design** | 8 measures isolated in a dedicated `_Measures` table with documented business definitions |
-| **Row-Level Security** | Two roles — dynamic `Department_User` via `USERPRINCIPALNAME()`, and static `Finance` role scoped to active suppliers; Entra ID group assignment documented for production |
-| **Fabric deployment** | Three-stage pipeline (Dev → Test → Prod) with deployment history |
-| **Semantic model governance** | Production semantic model endorsed as Promoted, with documented business definitions and metadata |
-| **Data lineage** | Source → Power Query → semantic model → report layer, documented through Fabric lineage |
-| **Finance domain knowledge** | Budget variance analysis, supplier concentration risk, PO coverage governance, contract expiry management |
-
----
-
-## Business Problem
-
-Finance and Procurement teams need a trusted, auditable view of spend across suppliers, departments and cost categories. Without a governed model, reporting becomes fragmented, budget variance is unclear, and access control becomes a compliance risk.
-
-This solution replaces ad-hoc reporting with a structured semantic model, clearly defined measures, role-based access and documented governance — so teams can independently explore spending patterns with confidence in the numbers.
-
-**The report answers three questions:**
-- Are we on budget, and which departments are driving variance?
-- Which suppliers represent concentration or contract renewal risk?
-- Is our procurement process governed — are purchases approved and PO-backed?
-
----
-
-## Model Design
-
-Classic star schema with a single fact table and four supporting dimensions.
-
-| Layer | Table | Purpose |
-|---|---|---|
-| Fact | `df_clean_spend` | Transaction-level spend, budget, variance, PO and approval detail |
-| Dimension | `Dim_Date` | Consistent time filtering — calendar year, quarter, month, week; fiscal year and fiscal quarter columns available in the semantic layer |
-| Dimension | `Dim_Supplier` | Supplier name, tier, category, contract expiry, contract risk classification |
-| Dimension | `Dim_Department` | Department, division, location, cost centre head, annual budget |
-| Dimension | `Dim_CostCategory` | Category name, budget type, spend type |
-
-Single-direction relationships from dimensions to fact. Foreign keys hidden from report layer. Measures isolated in a dedicated `_Measures` table — not embedded in visuals.
-
-**Design rationale:** Single-direction relationships keep filter propagation predictable and the model easier to reason about. Bidirectional filtering was not required for this model, so it was deliberately avoided. Measures are isolated in `_Measures` to separate calculation logic from the underlying data model and simplify maintenance.
-
-![Model View](<screenshots/Model View.jpg>)
-
----
-
-## Key Measures
-
-All measures defined in `_Measures` table. Business definitions documented in Governance Notes report page.
-
-| Measure | DAX Pattern | Purpose |
-|---|---|---|
-| `Total Spend` | `SUM(InvoiceAmount)` | Base measure — total invoice value in filter context |
-| `Total Budget` | `SUM(BudgetAmount)` | Budget allocation in filter context |
-| `Budget Variance` | `[Total Spend] - [Total Budget]` | Absolute variance — positive = overspend |
-| `% Budget Variance` | `DIVIDE([Budget Variance], [Total Budget])` | Normalised variance for cross-department comparison |
-| `PO Coverage Rate` | `DIVIDE(CALCULATE([Total Spend], df_clean_spend[POFlag] = "Yes"), [Total Spend])` | Proportion of spend backed by a purchase order — values below 80% flagged in report |
-| `Supplier Concentration %` | `DIVIDE([Total Spend], CALCULATE([Total Spend], ALL(Dim_Supplier)))` | Each supplier's share of total spend — denominator is total spend across all suppliers, regardless of current filter context |
-| `Top 2 Supplier Concentration` | `DIVIDE(SUMX(TOPN(2, VALUES(Dim_Supplier[SupplierKey]), [Total Spend], DESC), [Total Spend]), CALCULATE([Total Spend], ALL(Dim_Supplier)))` | Combined spend share of the two largest suppliers — denominator uses ALL(Dim_Supplier) so percentage is always relative to total spend, not the filtered subset |
-| `Spend vs Prior Year` | `CALCULATE([Total Spend], SAMEPERIODLASTYEAR(Dim_Date[FullDate]))` | Year-over-year spend movement — filter-context dependent; responds to year, department and division slicers |
-
-**`DIVIDE` is used throughout** rather than division operators — makes denominator handling explicit and avoids uncontrolled divide-by-zero behaviour, rather than leaving it to chance.
-
----
-
-## Row-Level Security
-
-Two roles implemented with least-privilege design.
-
-| Role | Table | Filter | Access |
-|---|---|---|---|
-| `Department_User` | `Dim_Department` | `[DepartmentName] = USERPRINCIPALNAME()` | Own cost centre only |
-| `Finance` | `Dim_Supplier` | `[Status] = "Active"` | All departments, active suppliers only |
-
-**Design decisions:**
-- `Department_User` uses dynamic RLS via `USERPRINCIPALNAME()` — one role covers all department users without maintaining individual user filters. In a production deployment, DepartmentName values would be replaced with UPN values, or a user-to-department mapping table would be used to link each user's email address to their cost centre
-- `Finance` role applies a static supplier filter — excludes inactive/lapsed suppliers from the finance view, reducing noise and supporting data quality governance
-- RLS logic is intentionally simple to ensure it is auditable and testable
-- In production, role assignment is managed through Entra ID security groups in Power BI Service — not individual user assignment
-- RLS applies to Viewer role only — Admins, Members and Contributors bypass RLS by design
-
-**Testing:** Roles validated using View As Role in Power BI Desktop and the test view in Power BI Service. Multi-user validation with separate accounts is the production verification step, performed once Entra ID groups are assigned.
-
-![RLS — Department_User role](<screenshots/Security Roles 1.jpg>)
-![RLS — Finance role](<screenshots/Security Roles 2.jpg>)
-
----
-
-## Enterprise Use Cases & Operational Considerations
-
-Although the portfolio uses a synthetic dataset, the solution was designed around recurring procurement and finance reporting requirements rather than one-off visualisation.
-
-**Business use cases**
-- **Budget and spend exception management** — budget variance is surfaced against a defined £10K threshold to highlight material overspend requiring investigation.
-- **Procurement compliance monitoring** — PO Coverage Rate identifies areas falling below the defined 80% coverage threshold.
-- **Supplier concentration monitoring** — Supplier Concentration % and Top 2 Supplier Concentration provide visibility of dependency on individual suppliers.
-- **Contract monitoring** — supplier contract status is categorised as Secure, Near Expiry or Inactive based on the defined contract-review logic.
-- **Role-based management information** — Row-Level Security restricts departmental visibility while allowing authorised users to access the information relevant to their responsibilities.
-- **Controlled reporting releases** — the solution uses a Development → Test → Production Fabric deployment pipeline to demonstrate a structured approach to report and semantic-model changes.
-- **Semantic-model governance** — business logic is centralised through reusable measures and a dedicated `_Measures` table, supported by metadata, documented definitions, lineage and semantic-model endorsement.
-
-**Operational considerations**
-
-For a production implementation, additional operational controls would be appropriate around data quality and refresh monitoring. This could include validation of transaction volumes, duplicate or missing transaction identifiers, unmapped suppliers or departments, invalid dates and refresh status, with exceptions surfaced for investigation before reporting is consumed.
-
-The current portfolio does not claim to implement live data-quality monitoring or production refresh alerting. These are documented as considerations for a future production implementation alongside the existing limitations and next-step architecture below.
-
----
-
-## Report Pages
-
-### Page 1 — Executive Overview
-*Answers: Are we on budget? Where is spend trending?*
-
-Four KPI tiles: Total Spend, Budget Variance, % Budget Variance, Spend vs Prior Year.
-
-**Spend vs Budget by Period** — combo chart showing monthly actual spend (bars) against budget line. Bars show spend volatility across the year; the budget line provides the consistent reference point. 2024 full-year position: -5.1% under budget (£305K favourable variance).
-
-**Spend vs Budget by Department** — clustered bar chart. Immediately surfaces the department story: IT is the largest overspend department; Marketing and Finance came in under budget. Operations and HR within tolerance.
-
-Year and Division slicers placed on the page keep filtering in context — no need to navigate to a separate page for a different view.
-
-![Executive Overview](<screenshots/Executive overview.jpg>)
-
-### Page 2 — Supplier Analysis
-*Answers: Which suppliers carry concentration or governance risk?*
-
-**Total Spend by Supplier** and **Supplier Concentration %** — horizontal bar charts. Top two suppliers (Northstar Software 26.7%, BluePeak Consulting 24.2%) account for over 50% of total spend. Concentration at this level warrants active contract management.
-
-**Supplier detail table** — sorted by Contract Status (Inactive → Near Expiry → Secure), then Total Spend. Columns: Supplier Name, Category, Supplier Tier, Contract Status, Contract Expiry, PO Coverage Rate, Budget Variance.
-
-Total Spend is intentionally excluded from the table — it is already visible in the bar charts above. The table serves as the governance layer only: contract risk, PO discipline, and budget position.
-
-`Contract Status` is a calculated column evaluated against the reporting period end date (31 Dec 2024):
-- **Inactive** — supplier deactivated (Summit Services, Greenline Solutions, CoreWorks Ltd — all Tier 3)
-- **Near Expiry** — contract expiring within 12 months (Skyline Travel, OfficeHub Supplies, Pioneer Tech)
-- **Secure** — contract valid beyond 12 months (all Tier 1 suppliers, plus Nimbus Training at Tier 2)
-
-The 12-month threshold is a working assumption based on typical procurement renewal lead times — renegotiation for Tier 1 and Tier 2 contracts typically begins 6–12 months before expiry to maintain commercial continuity and avoid contract lapse.
-
-**Report Indicators**
-
-PO Coverage Rate is highlighted in red where the value falls below 80% — indicating that less than 80% of a supplier's spend was backed by a purchase order before invoice receipt. All three suppliers below threshold are Tier 3 and Inactive, consistent with lower procurement controls at that tier.
-
-Budget Variance is highlighted in red where overspend exceeds £10,000 — immaterial variances below this threshold are not flagged. This reflects a commonly used finance reporting approach where only material exceptions warrant escalation.
-
-Bar charts filtered to Active suppliers only — Inactive suppliers excluded from spend and concentration analysis to avoid historical spend distorting the active supplier picture.
-
-![Supplier Analysis](<screenshots/Supplier Analysis.jpg>)
-
-### Page 3 — Governance Notes
-*Answers: What are the rules of this report?*
-
-Documents refresh schedule, RLS design, deployment architecture, report indicators and known limitations in plain language. Accessible to all report users as part of the published report.
-
-**Report Indicators documented on this page:**
-- PO Coverage Rate flagged below 80%
-- Budget Variance flagged where overspend exceeds £10,000
-- Contract Status thresholds — Inactive, Near Expiry (within 12 months), Secure
-
-**Why this page exists:** In a regulated environment, report users need to understand what the data represents, how it is secured, and who to contact with questions. Embedding this in the report removes the gap between documentation and delivery.
-
-![Governance Notes](<screenshots/Governance notes.jpg>)
-
----
-
-## Deployment & Governance
-
-Three-stage Fabric deployment pipeline: Development → Test → Production.
-
-| Stage | Workspace | Purpose |
-|---|---|---|
-| Dev | `Procurement-Spend-DEV` | Active development |
-| Test | `Procurement-Spend-TEST` | Pre-release validation |
-| Prod | `Procurement-Spend-PROD` | Promoted production version |
-
-- Deployment history tracked with timestamp and deployer identity — auditable in Fabric Deployment History
-- Semantic model endorsed as **Promoted** in Production workspace
-- RLS tested in Power BI Service before each production deployment
-- Pre-deployment validation includes spend totals reconciled against the source extract
-
-![Deployment Pipeline](<screenshots/Pipeline view.jpg>)
-![Deployment History](<screenshots/Deployment history.jpg>)
-![Endorsed Semantic Model](<screenshots/Endorsed semantic model.jpg>)
-
----
-
-## AI Readiness — Copilot Metadata
-
-The semantic model has been prepared for Copilot using Power BI Desktop's Model view.
-
-Applied across the semantic layer:
-- **Table descriptions** — all six tables documented with business purpose
-- **Column descriptions** — queryable columns documented with business definition, usage context and known limitations
-- **Measure descriptions** — all eight measures documented with business definition, calculation rationale and usage guidance
-
-This applies the metadata layer that governs Copilot query quality when the model is deployed on Fabric capacity. The descriptions configure the model for Copilot readiness; Copilot query execution itself requires Fabric capacity and is not enabled in this trial environment.
-
----
-
-## Data Lineage
-
-```
-Source (CSV extract)
-└── Power Query transformation (df_clean_spend)
-    ├── Column typing and key validation
-    ├── Removal of unused fields
-    └── Star schema semantic model
-        ├── 4 dimension tables
-        ├── 1 fact table
-        ├── Single-direction relationships
-        └── Report layer (3 pages)
-```
 
 Transformation logic documented in Power Query query steps. Full lineage visible in the Fabric lineage view in the Production workspace.
 
@@ -234,18 +9,26 @@ Transformation logic documented in Power Query query steps. Full lineage visible
 
 **Current limitations**
 - Budget amounts represent monthly procurement allocations distributed proportionally across transactions. Headline variance reflects the full-year position; filter by department for period-level analysis.
-- Source files are loaded from CSV via a local gateway connection rather than a cloud-hosted source.
-- RLS is validated in Desktop and the Service test view; multi-user validation requires Entra ID group assignment.
-- Data-quality checks and refresh monitoring (see Operational Considerations above) are not yet implemented in this portfolio build.
+- Source files are loaded from CSV via Fabric Copy job into a text-only staging layer, then cast and validated in SQL — not yet a cloud-hosted, continuously-refreshing source.
+- `Dim_UserDepartmentMap` is currently a small manually-entered table, not yet sourced from the Warehouse or an HR/directory system.
+- RLS is validated in Desktop using View As Role; multi-user validation with separate accounts requires Entra ID group assignment.
+- The project is not yet under Git version control — currently `.pbix` only, not `.pbip`.
+- Refresh is manual; no scheduled/automated refresh is currently configured.
+
+**Delivered since the initial build**
+- **SQL source layer** — Fabric Warehouse with staging/curated schemas, governed views, a parameterised function, and a stored procedure. Replaces the original CSV → Power Query-only path.
+- **Data-quality quarantine** — `usp_LoadFactSpend` validates and casts staged data, routing invalid rows to `Fact_Spend_Exceptions` with a specific reason. Tested by deliberately inserting an invalid row and confirming it was correctly caught, not just assumed to work.
+- **RLS upgraded** — `Own Department` (formerly `Department_User`) now uses a user-to-department mapping table rather than a direct name comparison, a more realistic production pattern.
 
 **Planned next steps**
-- **SQL source layer** — replace CSV extracts with a SQL source and publish the underlying queries (spend aggregation, budget variance by period, PO coverage by department) to demonstrate the full data stack.
-- **Cloud-hosted refresh** — migrate source files to SharePoint or OneLake to enable scheduled refresh without a gateway dependency.
+- **Git and `.pbip`** — bring the project under version control, replacing `.pbix`-only with a Git-tracked `.pbip` project.
+- **Cloud-hosted, scheduled refresh** — move from manual refresh to a configured Fabric refresh schedule.
 - **Incremental refresh** — evaluated as part of the target architecture for larger transactional volumes; the portfolio dataset is intentionally small enough that full refresh remains appropriate at this scale.
 - **Multi-user RLS validation** — assign Entra ID security groups and verify role behaviour across separate user accounts.
-- **Data-quality and refresh monitoring** — as outlined in Operational Considerations, for production-scale deployment.
+- **`Dim_UserDepartmentMap` sourced from the Warehouse** — replacing the manually-entered version with a properly governed table.
+- **Automated refresh monitoring and alerting** — beyond the quarantine logic already built, for production-scale operational visibility.
 
 ---
 
-*Senior BI Developer | Power BI & Microsoft Fabric | BI Modernisation, Semantic Modelling & DAX | Financial Services | PL-300 Certified*
+*Nishant Goel — Senior BI Developer | Power BI · DAX · Semantic Modelling · Data Governance · Microsoft Fabric | PL-300 Certified · DP-600 (Retaking)*
 *[linkedin.com/in/nish-goel](https://linkedin.com/in/nish-goel) · [github.com/nishantgoeluk-pixel](https://github.com/nishantgoeluk-pixel)*
