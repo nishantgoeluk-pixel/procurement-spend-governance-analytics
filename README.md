@@ -8,7 +8,7 @@ An independent portfolio project — a governed procurement spend analytics solu
 **Why this matters:**
 - Data is validated and governed in a Fabric SQL Warehouse *before* it reaches Power BI — not loaded straight from CSV, with invalid rows automatically quarantined rather than silently dropped or loaded
 - Row-Level Security uses a realistic mapping-table pattern, tested against known values (not just visually checked)
-- Every threshold and definition (budget variance, PO coverage, contract status) is defined once at the data layer, not duplicated per report
+- Every threshold and definition (budget variance, PO coverage, contract status) has a single business-logic source of truth in the SQL layer, with DAX measures in `_Measures` providing the equivalent report-facing calculation for the semantic model
 
 Full write-up, architecture, and every other report page below — click to expand any section.
 
@@ -49,7 +49,7 @@ This solution replaces ad-hoc reporting with a structured semantic model, clearl
 
 Source data is processed through a governed SQL layer in Fabric before it ever reaches the semantic model — not loaded straight from CSV into Power BI.
 
-**Why a Warehouse, not a Lakehouse:** a Lakehouse's SQL endpoint is read-only — it doesn't support persisted views, functions, or stored procedures. A Warehouse gives the full T-SQL surface needed to build and store reusable transformation and validation logic.
+**Why a Warehouse, not a Lakehouse:** the Lakehouse SQL analytics endpoint provides a read-only SQL surface over Delta tables — it does support creating views, functions and stored procedures, but not data modification (`INSERT`/`UPDATE`/`DELETE`) or table DDL (`CREATE`/`ALTER`/`DROP TABLE`). This project uses a Warehouse because the governed loading process requires persisted relational tables and T-SQL-based validation/quarantine logic, which only the Warehouse supports.
 
 **Staging and curated schemas:**
 - `stg` holds the raw extract exactly as it arrives — as text, unvalidated. Nothing downstream reads from it directly.
@@ -57,11 +57,12 @@ Source data is processed through a governed SQL layer in Fabric before it ever r
 
 **What the SQL layer does:**
 - **`fn_ContractStatus`** — a parameterised inline table-valued function classifying suppliers as Secure, Near Expiry or Inactive as of any given date, rather than a fixed calculated column baked to one date
-- **Governed views** — `vw_BudgetVarianceByDepartment`, `vw_POCoverageBySupplier`, `vw_SupplierConcentration` apply the same £10K variance and 80% PO coverage thresholds used in the report, defined once at the data layer rather than duplicated per report
+- **Governed views** — `vw_BudgetVarianceByDepartment`, `vw_POCoverageBySupplier`, `vw_SupplierConcentration` apply the same £10K variance and 80% PO coverage thresholds used in the report — the SQL layer's source of truth, with `_Measures` providing the equivalent DAX calculation for the semantic model
 - **`usp_LoadFactSpend`** — validates and casts staged data, quarantining rows that fail type conversion or reference an unknown dimension key into a `Fact_Spend_Exceptions` table with a specific reason, rather than silently dropping or silently loading invalid data
 - **Declared, unenforced keys** — `PRIMARY KEY`/`FOREIGN KEY ... NOT ENFORCED` constraints document the model's structure and support the query optimiser, even though Fabric Warehouse doesn't validate them at write time
 
 **Tested, not just built:** the quarantine logic was verified by deliberately inserting a row with an invalid date and an unknown supplier key — it was correctly caught and routed to the exceptions table, with the curated fact table unaffected.
+
 
 ![Warehouse Object Explorer](<screenshots/Warehouse object explorer.jpg>)
 ![Exception Handling Proof](<screenshots/Exception test.jpg>)
@@ -280,6 +281,22 @@ Transformation logic documented in Power Query query steps. Full lineage visible
 - **Multi-user RLS validation** — assign Entra ID security groups and verify role behaviour across separate user accounts.
 - **`Dim_UserDepartmentMap` sourced from the Warehouse** — replacing the manually-entered version with a properly governed table.
 - **Automated refresh monitoring and alerting** — beyond the quarantine logic already built, for production-scale operational visibility.
+
+</details>
+
+<details>
+<summary><strong>Key Design Decisions</strong></summary>
+
+| Decision | Rationale |
+|---|---|
+| Fabric Warehouse over Lakehouse | Table DDL and data modification (`INSERT`/`UPDATE`/`DELETE`) are required for the governed load process; the Lakehouse SQL endpoint supports views/functions/procedures but not these |
+| Staging → curated schema split | Keeps raw, unvalidated data out of anything the semantic model or reports can read from directly |
+| Exception quarantine over silent drop | Preserves invalid records and their specific failure reason for investigation, rather than losing them |
+| Parameterised `fn_ContractStatus` over a fixed calculated column | Works for any reporting date; the first version hard-coded one date and had to be corrected |
+| Mapping-table RLS over direct name comparison | Separates user identity from department logic — more realistic than assuming a username matches a department name |
+| Declared, unenforced PK/FK | Not validated at write time in Fabric Warehouse, but documents the model's structure and aids the query optimiser |
+| Dedicated `_Measures` table | Separates DAX calculation logic from the physical data model |
+| Dev → Test → Prod pipeline | Demonstrates controlled promotion rather than direct changes to production |
 
 </details>
 
