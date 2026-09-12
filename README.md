@@ -327,5 +327,5 @@ Transformations are documented in the Power Query steps. Full lineage is visible
 
 ---
 
-*Senior BI Developer | Power BI & Microsoft Fabric | BI Modernisation, Semantic Modelling & DAX | Financial Services | PL-300 Certified*
+*Senior BI Developer | Power BI & Microsoft Fabric | Modernising Enterprise BI | Semantic Modelling, DAX & Governance | Financial Services | PL-300 Certified*
 *[linkedin.com/in/nish-goel](https://linkedin.com/in/nish-goel) · [github.com/nishantgoeluk-pixel](https://github.com/nishantgoeluk-pixel)*
