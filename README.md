@@ -12,10 +12,7 @@ An independent portfolio project. It builds a governed procurement spend analyti
 
 Full detail and every report page are below — click a section to expand it.
 
----
-
-<details>
-<summary><strong>What This Demonstrates</strong></summary>
+## What This Demonstrates
 
 | Capability | Implementation |
 |---|---|
@@ -24,11 +21,27 @@ Full detail and every report page are below — click a section to expand it.
 | **Row-Level Security** | Two roles — a dynamic `Own Department` role using a user-to-department mapping table and `USERPRINCIPALNAME()`, and a static `Finance` role scoped to active suppliers only; Entra ID group assignment is documented for production use |
 | **Governed SQL layer** | Fabric Warehouse with separate staging and curated schemas, one T-SQL view, one parameterised function, and one stored procedure that checks and quarantines bad rows before they reach the semantic model |
 | **Fabric deployment** | Three-stage pipeline (Dev → Test → Prod) built with Fabric's native Deployment pipelines feature; Test and Prod share Dev's Warehouse as one data source; the Prod semantic model is endorsed as Promoted |
+| **Direct Lake & SQL-layer security** | A second, separate semantic model built in Direct Lake on SQL mode — measured against Import for refresh speed, and used to find and fix a real SQL-layer RLS gap between a dimension and its related fact table |
 | **Semantic model governance** | Production semantic model endorsed as Promoted, with documented business definitions and metadata |
 | **Data lineage** | Source → Power Query → semantic model → report, documented through Fabric lineage |
 | **Finance domain knowledge** | Budget variance analysis, supplier concentration risk, PO coverage governance, contract expiry management |
 
-</details>
+## Contents
+- [Business Problem](#business-problem)
+- [Data Layer — Fabric Warehouse](#data-layer)
+- [Model Design](#model-design)
+- [Key Measures](#key-measures)
+- [Row-Level Security](#row-level-security)
+- [Direct Lake & SQL-Layer Security Testing](#direct-lake--sql-layer-security-testing)
+- [Enterprise Use Cases & Operational Considerations](#enterprise-use-cases--operational-considerations)
+- [Report Pages (full detail)](#report-pages-full-detail)
+- [Deployment & Governance](#deployment--governance)
+- [AI Readiness — Copilot Metadata](#ai-readiness--copilot-metadata)
+- [Data Lineage](#data-lineage)
+- [Known Limitations & Next Steps](#known-limitations--next-steps)
+- [Key Design Decisions](#key-design-decisions)
+
+---
 
 <details>
 <summary><strong>Business Problem</strong></summary>
@@ -41,8 +54,6 @@ This solution replaces ad-hoc reporting with one structured semantic model, clea
 - **Monitor** — are we on budget, and where is spend moving?
 - **Identify risk** — which suppliers, contracts or purchasing behaviours need attention?
 - **Govern** — are purchases compliant with procurement controls and access policies?
-
-*Possible future extension: the governed semantic model here could support supplier risk scoring — combining existing concentration, contract-expiry, PO-coverage and budget-variance measures into one risk indicator. Not built yet in this portfolio version.*
 
 </details>
 
@@ -60,7 +71,7 @@ Source data passes through a governed SQL layer in Fabric before it reaches the 
 **What the SQL layer does:**
 - **`fn_ContractStatus`** — a parameterised function that classifies each supplier as Secure, Near Expiry or Inactive, as of any date you give it. Not a fixed column locked to one date.
 - **`usp_LoadFactSpend`** — checks and converts staged data. Rows that fail — wrong type, or an unknown key — go to a `Fact_Spend_Exceptions` table with a reason. Nothing is silently dropped or silently loaded.
-- **Declared, unenforced keys** — `PRIMARY KEY`/`FOREIGN KEY ... NOT ENFORCED` constraints record the intended structure of the model. Fabric Warehouse does not check them at write time, but they still document how the tables relate.
+- **Declared, unenforced keys** — in plain terms, the tables record which columns are meant to link to which, the same way a diagram would, even though the database doesn't actively check this at write time. In SQL, this is written as `PRIMARY KEY`/`FOREIGN KEY ... NOT ENFORCED` constraints. Fabric Warehouse does not check them at write time, but they still document how the tables relate.
 
 **Tested, not just built:** the quarantine logic was checked by deliberately adding a row with a bad date and an unknown supplier key. It was caught correctly and routed to the exceptions table. The main fact table was not affected.
 
@@ -101,6 +112,8 @@ Relationships run one way, from dimensions to fact. Foreign keys are hidden from
 <details>
 <summary><strong>Key Measures</strong></summary>
 
+**In plain terms:** every calculation used in this report — spend totals, budget comparisons, supplier risk indicators — is written once, in one place, using a formula language called DAX. Keeping every calculation in one table, with one definition each, means every report page uses exactly the same logic, and there's only ever one place to check or update it. The table below shows the actual formula for each measure, alongside what it's for in plain business terms.
+
 All measures live in `_Measures`. Business definitions are documented on the Governance Notes report page.
 
 | Measure | DAX Pattern | Purpose |
@@ -120,6 +133,8 @@ All measures live in `_Measures`. Business definitions are documented on the Gov
 
 <details>
 <summary><strong>Row-Level Security</strong></summary>
+
+**In plain terms:** not everyone who opens this report should see everything in it. A department manager should see their own department's spend, not every department's. Finance should see spend across the business, but only for suppliers still active. Row-Level Security is the mechanism that enforces this automatically — the same report, showing different data, depending on who's signed in. The table below shows how each rule is actually written.
 
 Two roles, built on least-privilege access.
 
@@ -143,18 +158,122 @@ Two roles, built on least-privilege access.
 </details>
 
 <details>
+<summary><strong>Direct Lake & SQL-Layer Security Testing</strong></summary>
+
+**In plain terms:** Power BI has a newer, faster way of connecting to data called Direct Lake. This section tests whether that faster connection still respects security rules written directly in the database — and finds that it does, but only if every table involved is protected, not just the obvious one. That gap, how it was found, and the fix, are documented below alongside a direct, measured comparison of refresh speed.
+
+An additional, self-contained experiment alongside the main project: a second semantic model, built in **Direct Lake on SQL** mode from the same Warehouse, to test two things directly rather than take them on faith — how Direct Lake's refresh behaviour compares to Import, and how SQL-layer Row-Level Security actually behaves once Direct Lake is involved.
+
+This is separate from the production semantic model used in the main report. It does not replace it.
+
+**Why this matters:**
+- Direct Lake refreshes by repointing to the latest data ("framing"), not by copying it. This was measured directly, not assumed.
+- SQL-layer Row-Level Security on a Warehouse table interacts differently with Direct Lake depending on which variant is used, and depending on which tables a query actually touches. This was tested until the reason was understood, not stopped at the first correct-looking result.
+
+---
+
+### Setting up the Direct Lake model
+
+A second semantic model, `ProcurementSpend-DirectLake`, was created directly from the Warehouse's `curated` schema, using **Direct Lake on SQL** storage mode.
+
+![New semantic model — Direct Lake on SQL](<screenshots/Direct Lake semantic model.jpg>)
+
+**Why "Direct Lake on SQL" and not "Direct Lake on OneLake":** the two variants behave differently when SQL-layer Row-Level Security is present. On SQL, a query that needs RLS-protected data falls back to DirectQuery to enforce it. On OneLake, that same query would succeed but silently skip the RLS check entirely — the model wouldn't apply it, and nothing would warn you. Since the whole point of this experiment was to observe RLS enforcement, the SQL variant was the correct choice.
+
+---
+
+### Refresh comparison: Direct Lake vs Import
+
+The same underlying data was refreshed both ways, and the refresh history for each was checked directly.
+
+**Direct Lake refresh ("framing") — 1 second:**
+
+![Direct Lake refresh history — 1 second](<screenshots/Direct Lake refresh.jpg>)
+
+**Import refresh (full data copy) — 22 seconds:**
+
+![Import model refresh history — 22 seconds](<screenshots/Import refresh.jpg>)
+
+At this project's small scale (850 transactions), that's already a ~22x difference. At larger data volumes, the performance characteristics of each mode make a bigger gap likely, but the actual difference in any given environment depends on the model, workload, and capacity — not something this test alone can prove at scale.
+
+---
+
+### Testing SQL-layer Row-Level Security with Direct Lake
+
+**In plain terms:** a security rule was added directly in the database, restricting each department to see only their own spend. The rule was first applied to the department list, and a related table of transactions was checked to see whether it was protected too — it wasn't. That gap, and how it was fixed, is shown below.
+
+A T-SQL security predicate function and security policy were created directly on the Warehouse, separate from the existing DAX-based `Own Department` role used in the main report. This tests SQL-layer RLS specifically, not the model-layer RLS documented elsewhere in this project.
+
+```sql
+CREATE FUNCTION Security.fn_DepartmentPredicate(@DepartmentKey AS VARCHAR(10))
+RETURNS TABLE
+WITH SCHEMABINDING
+AS
+RETURN
+    SELECT 1 AS fn_securitypredicate_result
+    FROM curated.Dim_UserDepartmentMap m
+    INNER JOIN curated.Dim_Department d
+        ON m.DepartmentName = d.DepartmentName
+    WHERE m.UserPrincipalName = USER_NAME()
+      AND d.DepartmentKey = @DepartmentKey;
+GO
+```
+
+The predicate was first applied to `Dim_Department` only:
+
+```sql
+CREATE SECURITY POLICY Security.DepartmentFilter
+ADD FILTER PREDICATE Security.fn_DepartmentPredicate(DepartmentKey)
+ON curated.Dim_Department
+WITH (STATE = ON);
+GO
+```
+
+**A real finding: securing the dimension table alone was not enough.** Querying `Dim_Department` directly correctly returned only the signed-in user's own department. But a visual built from `DepartmentName` and total spend still showed a second, unlabelled row carrying the full spend total of every *other* department — the security policy was filtering the dimension correctly, but `Fact_Spend` itself had no protection at all, so unmatched rows from other departments were still being summed and shown, just without a department name attached to them.
+
+This was confirmed directly, by querying `Fact_Spend` on its own, bypassing `Dim_Department` entirely:
+
+```sql
+EVALUATE
+SUMMARIZECOLUMNS(
+    'Fact_Spend'[DepartmentKey],
+    "Total", SUM('Fact_Spend'[InvoiceAmount])
+)
+```
+
+This returned all five departments' totals, confirming `Fact_Spend` was still fully exposed regardless of the dimension-level policy.
+
+**The fix — extending the same predicate to `Fact_Spend` directly:**
+
+```sql
+CREATE SECURITY POLICY Security.FactSpendFilter
+ADD FILTER PREDICATE Security.fn_DepartmentPredicate(DepartmentKey)
+ON curated.Fact_Spend
+WITH (STATE = ON);
+GO
+```
+
+With both policies in place, the unlabelled row disappeared, and the visual correctly showed only the signed-in user's own department.
+
+---
+
+### Confirming the result
+
+![RLS correctly enforced, with confirmed DirectQuery fallback](<screenshots/RLS fallback confirmed.jpg>)
+
+This single result confirms two things at once:
+
+1. **The security is correct** — signed in as a user mapped to the IT department, the visual shows only IT's spend (£3,535,681.60), with no unlabelled or leaked total from any other department.
+2. **The fallback is real, not assumed** — Performance Analyzer shows a non-zero **Direct query** time (170ms) alongside the DAX query time (249ms) for this same visual. This is the documented mechanism by which Direct Lake enforces SQL-layer RLS: it cannot check the security policy itself, so it routes the query through DirectQuery specifically to have the SQL engine apply it.
+
+**What this demonstrates, taken together:** Direct Lake's speed advantage over Import is real and measurable, even at small scale. Its handling of SQL-layer security is equally real, but does not automatically extend from a dimension table to a related fact table — that has to be applied deliberately, table by table, and verified by testing what a query actually returns, not just what the security policy appears to say.
+
+</details>
+
+<details>
 <summary><strong>Enterprise Use Cases & Operational Considerations</strong></summary>
 
-The dataset is synthetic, but the solution was built around real, recurring procurement and finance needs — not a one-off report.
-
-**Business use cases**
-- **Budget and spend exception management** — budget variance is flagged against a £10K threshold, to highlight overspend worth investigating.
-- **Procurement compliance monitoring** — PO Coverage Rate flags spend below the 80% threshold.
-- **Supplier concentration monitoring** — Supplier Concentration % and Top 2 Supplier Concentration show how dependent the business is on a small number of suppliers.
-- **Contract monitoring** — supplier contract status is Secure, Near Expiry or Inactive, based on defined rules.
-- **Role-based management information** — Row-Level Security limits what each user sees to their own area of responsibility.
-- **Controlled reporting releases** — a Dev → Test → Production pipeline shows a structured way to release changes.
-- **Semantic-model governance** — business logic lives in reusable measures and one `_Measures` table, with documentation, metadata and lineage.
+The dataset is synthetic, but the solution was built around real, recurring procurement and finance needs — not a one-off report. The measures, security model and report pages documented above map directly onto real budget management, procurement compliance, supplier risk and controlled-release scenarios that any finance or procurement function would recognise.
 
 **Operational considerations**
 
@@ -261,6 +380,8 @@ This metadata helps Copilot interpret the model and improves the quality of supp
 <details>
 <summary><strong>Data Lineage</strong></summary>
 
+**In plain terms:** the diagram below traces the full path data takes through this project — from the original file, through the checks and validation in the Warehouse, into the model, and finally into the report. Each step only receives data that has passed the step before it.
+
 <pre>
 Source (CSV extract)
 └── Fabric Warehouse — stg schema (text, unvalidated)
@@ -299,6 +420,7 @@ Transformations are documented in the Power Query steps. Full lineage is visible
 - **RLS upgraded** — `Own Department` (previously `Department_User`) now uses a mapping table instead of comparing names directly. Closer to how a real deployment would work.
 - **Deployment pipeline completed** — all three stages (Dev/Test/Prod) publish and refresh correctly against a shared Warehouse. The Prod model is endorsed as Promoted, and RLS is checked in the Service.
 - **Version control added** — the Dev workspace is connected to Git, syncing Fabric items (Warehouse, semantic model, report) as `.pbip`, not just `.pbix`.
+- **Direct Lake and SQL-layer security tested** — a separate Direct Lake semantic model was built to measure refresh speed against Import, and to test how SQL-layer Row-Level Security behaves with Direct Lake. Found and fixed a real gap where securing a dimension table alone did not protect the related fact table.
 
 **Planned next steps**
 - **Cloud-hosted, scheduled refresh** — move from manual refresh to a set Fabric schedule.
@@ -322,6 +444,7 @@ Transformations are documented in the Power Query steps. Full lineage is visible
 | Declared, unenforced PK/FK | Not checked at write time in Fabric Warehouse, but still documents the intended structure of the model |
 | Dedicated `_Measures` table | Keeps DAX calculation logic separate from the underlying data model |
 | Dev → Test → Prod pipeline | Shows controlled promotion of changes, rather than editing production directly |
+| SQL-layer RLS extended to the fact table, not just the dimension | Testing showed the dimension-only policy left the fact table's own data unprotected — the same rule had to be applied to both |
 
 </details>
 
