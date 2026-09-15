@@ -26,21 +26,6 @@ Full detail and every report page are below — click a section to expand it.
 | **Data lineage** | Source → Power Query → semantic model → report, documented through Fabric lineage |
 | **Finance domain knowledge** | Budget variance analysis, supplier concentration risk, PO coverage governance, contract expiry management |
 
-## Contents
-- [Business Problem](#business-problem)
-- [Data Layer — Fabric Warehouse](#data-layer)
-- [Model Design](#model-design)
-- [Key Measures](#key-measures)
-- [Row-Level Security](#row-level-security)
-- [Direct Lake & SQL-Layer Security Testing](#direct-lake--sql-layer-security-testing)
-- [Enterprise Use Cases & Operational Considerations](#enterprise-use-cases--operational-considerations)
-- [Report Pages (full detail)](#report-pages-full-detail)
-- [Deployment & Governance](#deployment--governance)
-- [AI Readiness — Copilot Metadata](#ai-readiness--copilot-metadata)
-- [Data Lineage](#data-lineage)
-- [Known Limitations & Next Steps](#known-limitations--next-steps)
-- [Key Design Decisions](#key-design-decisions)
-
 ---
 
 <details>
