@@ -44,7 +44,7 @@ Full detail and every report page are below — click a section to expand it.
 ---
 
 <details>
-<summary><strong>Business Problem</strong></summary>
+<summary id="business-problem"><strong>Business Problem</strong></summary>
 
 Finance and Procurement teams need a trusted, auditable view of spend — by supplier, department and cost category. Without a governed model, reporting becomes fragmented, budget variance is unclear, and access control becomes a risk.
 
@@ -58,7 +58,7 @@ This solution replaces ad-hoc reporting with one structured semantic model, clea
 </details>
 
 <details>
-<summary><strong>Data Layer — Fabric Warehouse</strong></summary>
+<summary id="data-layer"><strong>Data Layer — Fabric Warehouse</strong></summary>
 
 Source data passes through a governed SQL layer in Fabric before it reaches the semantic model. It is not loaded straight from CSV into Power BI.
 
@@ -88,7 +88,7 @@ stg (raw, unvalidated)
 </details>
 
 <details>
-<summary><strong>Model Design</strong></summary>
+<summary id="model-design"><strong>Model Design</strong></summary>
 
 A star schema: one fact table, four analytical dimensions, and one security mapping table.
 
@@ -110,7 +110,7 @@ Relationships run one way, from dimensions to fact. Foreign keys are hidden from
 </details>
 
 <details>
-<summary><strong>Key Measures</strong></summary>
+<summary id="key-measures"><strong>Key Measures</strong></summary>
 
 **In plain terms:** every calculation used in this report — spend totals, budget comparisons, supplier risk indicators — is written once, in one place, using a formula language called DAX. Keeping every calculation in one table, with one definition each, means every report page uses exactly the same logic, and there's only ever one place to check or update it. The table below shows the actual formula for each measure, alongside what it's for in plain business terms.
 
@@ -132,7 +132,7 @@ All measures live in `_Measures`. Business definitions are documented on the Gov
 </details>
 
 <details>
-<summary><strong>Row-Level Security</strong></summary>
+<summary id="row-level-security"><strong>Row-Level Security</strong></summary>
 
 **In plain terms:** not everyone who opens this report should see everything in it. A department manager should see their own department's spend, not every department's. Finance should see spend across the business, but only for suppliers still active. Row-Level Security is the mechanism that enforces this automatically — the same report, showing different data, depending on who's signed in. The table below shows how each rule is actually written.
 
@@ -158,7 +158,7 @@ Two roles, built on least-privilege access.
 </details>
 
 <details>
-<summary><strong>Direct Lake & SQL-Layer Security Testing</strong></summary>
+<summary id="direct-lake--sql-layer-security-testing"><strong>Direct Lake & SQL-Layer Security Testing</strong></summary>
 
 **In plain terms:** Power BI has a newer, faster way of connecting to data called Direct Lake. This section tests whether that faster connection still respects security rules written directly in the database — and finds that it does, but only if every table involved is protected, not just the obvious one. That gap, how it was found, and the fix, are documented below alongside a direct, measured comparison of refresh speed.
 
@@ -176,7 +176,7 @@ This is separate from the production semantic model used in the main report. It 
 
 A second semantic model, `ProcurementSpend-DirectLake`, was created directly from the Warehouse's `curated` schema, using **Direct Lake on SQL** storage mode.
 
-![New semantic model — Direct Lake on SQL](<screenshots/Direct Lake semantic model.jpg>)
+![New semantic model — Direct Lake on SQL](<screenshots/direct lake semantic model.jpg>)
 
 **Why "Direct Lake on SQL" and not "Direct Lake on OneLake":** the two variants behave differently when SQL-layer Row-Level Security is present. On SQL, a query that needs RLS-protected data falls back to DirectQuery to enforce it. On OneLake, that same query would succeed but silently skip the RLS check entirely — the model wouldn't apply it, and nothing would warn you. Since the whole point of this experiment was to observe RLS enforcement, the SQL variant was the correct choice.
 
@@ -188,11 +188,11 @@ The same underlying data was refreshed both ways, and the refresh history for ea
 
 **Direct Lake refresh ("framing") — 1 second:**
 
-![Direct Lake refresh history — 1 second](<screenshots/Direct Lake refresh.jpg>)
+![Direct Lake refresh history — 1 second](<screenshots/direct lake refresh.jpg>)
 
 **Import refresh (full data copy) — 22 seconds:**
 
-![Import model refresh history — 22 seconds](<screenshots/Import refresh.jpg>)
+![Import model refresh history — 22 seconds](<screenshots/import refresh.jpg>)
 
 At this project's small scale (850 transactions), that's already a ~22x difference. At larger data volumes, the performance characteristics of each mode make a bigger gap likely, but the actual difference in any given environment depends on the model, workload, and capacity — not something this test alone can prove at scale.
 
@@ -271,7 +271,7 @@ This single result confirms two things at once:
 </details>
 
 <details>
-<summary><strong>Enterprise Use Cases & Operational Considerations</strong></summary>
+<summary id="enterprise-use-cases--operational-considerations"><strong>Enterprise Use Cases & Operational Considerations</strong></summary>
 
 The dataset is synthetic, but the solution was built around real, recurring procurement and finance needs — not a one-off report. The measures, security model and report pages documented above map directly onto real budget management, procurement compliance, supplier risk and controlled-release scenarios that any finance or procurement function would recognise.
 
@@ -284,7 +284,7 @@ This project does not claim to have automated monitoring or alerting. Those are 
 </details>
 
 <details>
-<summary><strong>Report Pages (full detail)</strong></summary>
+<summary id="report-pages-full-detail"><strong>Report Pages (full detail)</strong></summary>
 
 ### Page 1 — Executive Overview
 *Answers: Are we on budget? Where is spend trending?*
@@ -342,7 +342,7 @@ Plain-language documentation of the refresh schedule, RLS design, deployment set
 </details>
 
 <details>
-<summary><strong>Deployment & Governance</strong></summary>
+<summary id="deployment--governance"><strong>Deployment & Governance</strong></summary>
 
 A three-stage Fabric pipeline: Development → Test → Production.
 
@@ -364,7 +364,7 @@ A three-stage Fabric pipeline: Development → Test → Production.
 </details>
 
 <details>
-<summary><strong>AI Readiness — Copilot Metadata</strong></summary>
+<summary id="ai-readiness--copilot-metadata"><strong>AI Readiness — Copilot Metadata</strong></summary>
 
 The semantic model was prepared for Copilot using Power BI Desktop's Model view.
 
@@ -378,7 +378,7 @@ This metadata helps Copilot interpret the model and improves the quality of supp
 </details>
 
 <details>
-<summary><strong>Data Lineage</strong></summary>
+<summary id="data-lineage"><strong>Data Lineage</strong></summary>
 
 **In plain terms:** the diagram below traces the full path data takes through this project — from the original file, through the checks and validation in the Warehouse, into the model, and finally into the report. Each step only receives data that has passed the step before it.
 
@@ -405,7 +405,7 @@ Transformations are documented in the Power Query steps. Full lineage is visible
 </details>
 
 <details>
-<summary><strong>Known Limitations & Next Steps</strong></summary>
+<summary id="known-limitations--next-steps"><strong>Known Limitations & Next Steps</strong></summary>
 
 **Current limitations**
 - Budget figures are monthly allocations, spread proportionally across transactions. The headline variance is a full-year figure — filter by department to see period-level detail.
@@ -432,7 +432,7 @@ Transformations are documented in the Power Query steps. Full lineage is visible
 </details>
 
 <details>
-<summary><strong>Key Design Decisions</strong></summary>
+<summary id="key-design-decisions"><strong>Key Design Decisions</strong></summary>
 
 | Decision | Reason |
 |---|---|
