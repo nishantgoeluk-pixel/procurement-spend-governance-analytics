@@ -1,7 +1,7 @@
 role 'Own Department'
 	modelPermission: read
 
-	tablePermission Dim_UserDepartmentMap = [UserPrincipalName] == "shilpigoel@natwest9741.onmicrosoft.com"
+	tablePermission Dim_UserDepartmentMap = [UserPrincipalName] = USERPRINCIPALNAME()
 
 	annotation PBI_Id = 27008ead2ad5433880500bfdb66b271e
 
