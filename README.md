@@ -16,7 +16,7 @@ The dataset is deliberately synthetic and small — 850 transactions, 12 supplie
 **Who this is for:**
 - **Finance** — monitor spend against budget, identify material variance and understand where spend is changing.
 - **Procurement** — monitor supplier concentration, PO compliance and contracts approaching expiry.
-- **Business / Risk owners** — understand supplier dependency, access controls and where governance issues need investigation.
+- **Business / Risk owners** — understand supplier concentration, access controls and where governance issues need investigation.
 
 The report is designed around decisions rather than individual visuals: monitor financial position, identify supplier or control risk, and understand the rules and data behind the numbers.
 
