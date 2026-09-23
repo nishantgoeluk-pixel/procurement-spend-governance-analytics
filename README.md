@@ -13,6 +13,13 @@ The dataset is deliberately synthetic and small — 850 transactions, 12 supplie
 - Dynamic Row-Level Security uses a user-to-department mapping pattern and was tested against known results rather than only checked visually.
 - Deployment, security, lineage and known limitations are documented alongside the report rather than treated as separate afterthoughts.
 
+**Who this is for:**
+- **Finance** — monitor spend against budget, identify material variance and understand where spend is changing.
+- **Procurement** — monitor supplier concentration, PO compliance and contracts approaching expiry.
+- **Business / Risk owners** — understand supplier dependency, access controls and where governance issues need investigation.
+
+The report is designed around decisions rather than individual visuals: monitor financial position, identify supplier or control risk, and understand the rules and data behind the numbers.
+
 Full detail and every report page are below — click a section to expand it.
 
 ## What This Demonstrates
@@ -395,6 +402,16 @@ Source files
 
 <details>
 <summary id="known-limitations--next-steps"><strong>Known Limitations & Next Steps</strong></summary>
+
+**Planned evolution**
+
+The current project demonstrates governed spend reporting. The next phase — in priority order, after the ingestion gap below is closed — moves it toward *spend, supplier risk and governance* more broadly:
+1. **Complete the ingestion architecture** — a consistent, reproducible staging → curated load path across all dimensions, not just the fact table (see below).
+2. **A second genuine dynamic RLS scenario** — a `Procurement Category Manager` role, mapped to assigned categories the same way `Own Department` maps to departments, replacing the current static `Finance` role as the project's second security pattern.
+3. **Supplier performance / third-party risk data** — SLA performance, incidents, criticality and contract ownership alongside the existing spend and contract-expiry view, reflecting how financial-services firms are expected to monitor third-party dependency throughout the life of a supplier relationship.
+4. **Operational monitoring** — surfacing load/exception counts, reconciliation status and refresh freshness, rather than leaving that value implicit in the Warehouse.
+
+This is intentionally sequenced rather than attempted all at once: the ingestion gap is closed first because it underpins everything built on top of it, and the RLS change is deliberately held until it can be done with the same rigour (test users, positive/negative cases, documentation) as the rest of this project.
 
 **Current limitations**
 - Budget figures are monthly allocations, spread proportionally across transactions. The headline variance is a full-year figure — filter by department to see period-level detail.
