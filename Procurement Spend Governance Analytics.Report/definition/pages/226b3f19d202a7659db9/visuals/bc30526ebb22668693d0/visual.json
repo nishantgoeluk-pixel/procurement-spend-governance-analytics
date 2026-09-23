@@ -19,7 +19,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "Two roles: Finance (all departments, active suppliers only) and Own Department (own cost centre only, via a user-to-department mapping table matched to USERPRINCIPALNAME()). Principle: least-privilege access. Department users cannot view spend data for other cost centres. Logic is intentionally simple to ensure it is auditable and testable.",
+                    "value": "Two roles: Finance (all departments, active suppliers only — an illustrative static business-filtering pattern, not a recommended production access design) and Own Department (mapped department only, via a user-to-department mapping table matched to USERPRINCIPALNAME()). Department users cannot view spend data for other departments. Logic is intentionally simple to ensure it is auditable and testable.",
                     "textStyle": {
                       "fontSize": "14pt",
                       "color": "#b3b3b3"

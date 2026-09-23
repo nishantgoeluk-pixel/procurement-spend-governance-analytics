@@ -19,7 +19,7 @@
               {
                 "textRuns": [
                   {
-                    "value": "PO Coverage Rate flagged red below 80% — spend not backed by a purchase order before invoice.",
+                    "value": "PO Coverage Rate flagged red below 80% — share of transactions without a purchase order before invoice.",
                     "textStyle": {
                       "fontSize": "14pt",
                       "color": "#b3b3b3"

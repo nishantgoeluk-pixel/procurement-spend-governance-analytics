@@ -19,7 +19,7 @@ Full detail and every report page are below — click a section to expand it.
 
 | Capability | Implementation |
 |---|---|
-| **Dimensional modelling** | Star schema — 1 fact table, 4 analytical dimensions and 1 security mapping table, single-direction relationships, hidden foreign keys |
+| **Dimensional modelling** | Star schema — 1 fact table, 4 analytical dimensions and 1 security mapping table, single-direction relationships and dedicated dimensional keys |
 | **DAX measure design** | Measures are centralised in a dedicated `_Measures` table with documented business definitions and consistent calculation logic |
 | **Row-Level Security** | Two roles — a dynamic `Own Department` role using a user-to-department mapping table and `USERPRINCIPALNAME()`, and a static `Finance` role scoped to active suppliers only; Entra ID group assignment is documented for production use |
 | **Governed SQL layer** | Fabric Warehouse with staging and curated schemas, a governed view, a parameterised function, a validation/quarantine load procedure and a reconciliation procedure |
@@ -91,7 +91,7 @@ A star schema: one fact table, four analytical dimensions, and one security mapp
 | Dimension | `Dim_CostCategory` | Category name, budget type, spend type |
 | Dimension | `Dim_UserDepartmentMap` | Maps a user to their department, for `Own Department` RLS |
 
-Relationships run one way, from dimensions to fact. Foreign keys are hidden from the report layer. Measures sit in one `_Measures` table, not scattered across visuals.
+Relationships run one way, from dimensions to fact. Measures sit in one `_Measures` table rather than being scattered across visuals.
 
 **Why one-way relationships:** they keep filtering predictable and the model easier to reason about. This model does not need two-way filtering, so it was left out on purpose. Keeping measures in `_Measures` separates calculation logic from the data itself, which makes the model easier to maintain.
 
