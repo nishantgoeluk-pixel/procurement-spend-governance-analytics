@@ -53,8 +53,9 @@ Source data passes through a governed SQL layer in Fabric before it reaches the 
 **Why a Warehouse, not a Lakehouse:** the Lakehouse SQL analytics endpoint provides a read-only T-SQL surface over Delta tables. It supports queries, views, functions and stored procedures, but not `INSERT`/`UPDATE`/`DELETE` against the underlying tables, or table-structure changes (`CREATE`/`ALTER`/`DROP TABLE`). This project requires T-SQL data modification during the governed load process, so a Warehouse was selected instead.
 
 **Staging and curated schemas:**
-- `stg` holds raw, text-based inputs for the entities routed through the validation path (Date, Department, Supplier, Fact). Nothing downstream reads from it directly.
-- `curated` contains typed, keyed analytical tables. Only this layer connects to the semantic model. The fact load is explicitly validated from staging to curated, with rejected rows written to an exception table. `Dim_CostCategory` is currently loaded directly into `curated` by the Copy Job rather than via `stg`, since it needs no validation logic — see Known Limitations.
+- `stg` receives raw, text-based inputs from the Copy Job for Date, Department, Supplier and Fact. Nothing downstream reads from it directly.
+- `curated` contains typed, keyed analytical tables. Only this layer connects to the semantic model.
+- The **fact** load has a coded, committed path from staging to curated: `usp_LoadFactSpend` validates and converts staged rows, with rejected rows written to an exception table. The **Date, Department and Supplier** dimensions currently land in `stg`, but their promotion into `curated` is not yet captured as committed SQL in this repository — see Known Limitations. `Dim_CostCategory` bypasses `stg` entirely and is loaded directly into `curated` by the Copy Job.
 
 **What the SQL layer does:**
 - **`fn_ContractStatus`** — a parameterised function that classifies each supplier as Secure, Near Expiry or Inactive, as of any date you give it. Not a fixed column locked to one date.
@@ -83,7 +84,7 @@ A star schema: one fact table, four analytical dimensions, and one security mapp
 
 | Layer | Table | Purpose |
 |---|---|---|
-| Fact | `df_clean_spend` | Transaction-level spend, budget, variance, PO and approval detail |
+| Fact | `df_clean_spend` | Transaction-level spend, budget allocation and purchase-order status |
 | Dimension | `Dim_Date` | Time filtering — year, quarter, month, week, plus fiscal year and quarter |
 | Dimension | `Dim_Supplier` | Supplier name, tier, category, contract expiry, risk classification |
 | Dimension | `Dim_Department` | Department, division, location, cost centre head, annual budget |
@@ -101,7 +102,7 @@ Relationships run one way, from dimensions to fact. Foreign keys are hidden from
 <details>
 <summary id="key-measures"><strong>Key Measures</strong></summary>
 
-**In plain terms:** every calculation used in this report — spend totals, budget comparisons, supplier risk indicators — is written once, in one place, using a formula language called DAX. Keeping every calculation in one table, with one definition each, means every report page uses exactly the same logic, and there's only ever one place to check or update it. The table below shows the actual formula for each measure, alongside what it's for in plain business terms.
+**In plain terms:** calculations used throughout the report are centralised in a dedicated `_Measures` table rather than recreated inside individual visuals. The table below highlights the key analytical measures and representative DAX patterns alongside their business purpose.
 
 All measures live in `_Measures`. Business definitions are documented on the Governance Notes report page.
 
@@ -125,11 +126,11 @@ All measures live in `_Measures`. Business definitions are documented on the Gov
 
 **In plain terms:** not everyone who opens this report should see everything in it. A department manager should see their own department's spend, not every department's. Finance should see spend across the business, but only for suppliers still active. Row-Level Security is the mechanism that enforces this automatically — the same report, showing different data, depending on who's signed in. The table below shows how each rule is actually written.
 
-Two roles, built on least-privilege access.
+Two roles demonstrate dynamic and static RLS patterns.
 
 | Role | Mechanism | Access |
 |---|---|---|
-| `Own Department` | `Dim_UserDepartmentMap[UserPrincipalName] = USERPRINCIPALNAME()`, linked through to `Dim_Department` | Own cost centre only |
+| `Own Department` | `Dim_UserDepartmentMap[UserPrincipalName] = USERPRINCIPALNAME()`, linked through to `Dim_Department` | Mapped department only |
 | `Finance` | `Dim_Supplier[Status] = "Active"` | All departments, active suppliers only |
 
 **Design choices:**
@@ -149,7 +150,7 @@ Two roles, built on least-privilege access.
 <details>
 <summary id="direct-lake--sql-layer-security-testing"><strong>Direct Lake & SQL-Layer Security Testing</strong></summary>
 
-**In plain terms:** Power BI has a newer, faster way of connecting to data called Direct Lake. This section tests whether that faster connection still respects security rules written directly in the database — and finds that it does, but only if every table involved is protected, not just the obvious one. That gap, how it was found, and the fix, are documented below alongside a direct, measured comparison of refresh speed.
+**In plain terms:** Direct Lake is a Fabric semantic-model storage mode designed to access OneLake data without performing a traditional Import copy. This section tests whether Direct Lake still respects security rules written directly in the database — and finds that it does, but only if every table involved is protected, not just the obvious one. That gap, how it was found, and the fix, are documented below alongside a direct, measured comparison of refresh behaviour.
 
 An additional, self-contained experiment alongside the main project: a second semantic model, built in **Direct Lake on SQL** mode from the same Warehouse, to test two things directly rather than take them on faith — how Direct Lake's refresh behaviour compares to Import, and how SQL-layer Row-Level Security actually behaves once Direct Lake is involved.
 
@@ -192,6 +193,8 @@ In this small portfolio test, Direct Lake framing completed in 1 second compared
 **In plain terms:** a security rule was added directly in the database, restricting each department to see only their own spend. The rule was first applied to the department list, and a related table of transactions was checked to see whether it was protected too — it wasn't. That gap, and how it was fixed, is shown below.
 
 A T-SQL security predicate function and security policy were created directly on the Warehouse, separate from the existing DAX-based `Own Department` role used in the main report. This tests SQL-layer RLS specifically, not the model-layer RLS documented elsewhere in this project.
+
+**Reproducibility note:** this SQL-layer RLS test was performed directly against the Warehouse as a standalone experiment. The predicate function, the two security policies, and the `curated.Dim_UserDepartmentMap` table they depend on are not currently committed as Warehouse project SQL objects in this repository — they exist only as the code shown below, run and verified interactively. Committing them as reproducible Warehouse artefacts is listed as a next step.
 
 ```sql
 CREATE FUNCTION Security.fn_DepartmentPredicate(@DepartmentKey AS VARCHAR(10))
@@ -310,7 +313,7 @@ PO Coverage Rate turns red below 80% — meaning fewer than 80% of a supplier's 
 
 Budget Variance turns red above £10,000 overspend. This is an illustrative materiality rule for this portfolio; a production threshold would be agreed with Finance/Procurement and may vary by organisational context.
 
-The bar charts only include active suppliers, so old spend from inactive ones doesn't distort the picture.
+The bar charts only display active suppliers. `Supplier Concentration %`'s denominator (`ALL(Dim_Supplier)`) removes all supplier-table filters, including Status — so the percentage shown is each active supplier's share of *total* spend, including inactive suppliers, not their share of active-supplier spend alone. Restricting the denominator to active suppliers only would be a DAX change, not just a display one, and is a candidate refinement if the page's intent shifts from total-spend share to current-supplier-base share.
 
 ![Supplier Analysis](<screenshots/Supplier Analysis.jpg>)
 
@@ -344,7 +347,7 @@ A three-stage Fabric pipeline: Development → Test → Production.
 **A note on the architecture:** for this portfolio-scale dataset, Test and Prod deliberately share the Dev Warehouse, so the project can demonstrate artifact promotion without duplicating a small data platform three times. In a regulated production environment, I would separate environment data sources and apply environment-specific connection configuration — full per-stage data isolation is the standard pattern at that scale, and this project's shared-Warehouse approach is a deliberate simplification, not a claim that it's the more common design.
 
 - The pipeline was built with Fabric's native Deployment pipelines feature, linking all three workspaces.
-- Pre-deployment checks include reconciling spend totals against the source extract.
+- Pre-deployment checks include reviewing transaction counts, spend totals and data-quality counts returned by the `usp_ReconcileSpendTotals` reconciliation procedure.
 - Row-Level Security was tested directly in the Service, using Test as role for both `Own Department` and `Finance` — not just View As Role in Desktop.
 
 ![Deployment Pipeline](<screenshots/Pipeline view.jpg>)
@@ -364,16 +367,17 @@ Further model metadata — including broader table/column descriptions and synon
 <details>
 <summary id="data-lineage"><strong>Data Lineage</strong></summary>
 
-**In plain terms:** the diagram below traces the full path data takes through this project — from the original file, through the checks and validation in the Warehouse, into the model, and finally into the report. Each step only receives data that has passed the step before it.
+**In plain terms:** the diagram below traces the full path data takes through this project — from the original file, through the checks and validation in the Warehouse, into the model, and finally into the report. The fact table's path is fully coded end to end; the dimension tables' promotion from staging to curated is not yet captured as committed SQL — see Known Limitations.
 
 <pre>
 Source files
 └── Fabric Copy Job
     └── Fabric Warehouse
-        ├── stg — raw / unvalidated inputs
-        │   └── validation and load logic (usp_LoadFactSpend)
-        │       ├── valid rows → curated tables
-        │       └── invalid fact rows → Fact_Spend_Exceptions
+        ├── stg — raw / unvalidated inputs (Date, Department, Supplier, Fact)
+        │   └── usp_LoadFactSpend — coded, committed load for Fact only
+        │       ├── valid rows → curated.Fact_Spend
+        │       └── invalid rows → Fact_Spend_Exceptions
+        │   (Date/Department/Supplier promotion to curated not yet committed as SQL)
         │
         └── curated — typed / governed analytical tables
             └── Power BI semantic model (Import)
@@ -394,7 +398,7 @@ Source files
 
 **Current limitations**
 - Budget figures are monthly allocations, spread proportionally across transactions. The headline variance is a full-year figure — filter by department to see period-level detail.
-- Source files load from CSV, through a Fabric Copy Job, into a text-only staging layer, then get typed and checked in SQL — with one exception: `Dim_CostCategory` is currently routed by the Copy Job directly into `curated`, not through `stg`. The intended pattern is for all source entities to follow the same staging path; this is a known inconsistency to fix, not a deliberate design choice. Also not yet a cloud-hosted source that refreshes continuously.
+- Fact data follows a coded staging → validation → curated path through `usp_LoadFactSpend`. Date, Department and Supplier currently land in staging, but their equivalent promotion logic into curated is not yet captured as committed SQL in this repository. `Dim_CostCategory` currently bypasses staging entirely. Completing a consistent, reproducible staging → curated load path across all dimensions is a known next step. Also not yet a cloud-hosted source that refreshes continuously.
 - `Dim_UserDepartmentMap` is still a small, manually-typed table — not yet pulled from the Warehouse or from an HR/directory system.
 - RLS has been checked with View As Role in Desktop and Test as role in the Service, for one authorised department user. Cross-department denial and unmapped-user cases aren't documented separately yet. Testing with multiple real accounts needs Entra ID group assignment.
 - Refresh is manual — no schedule is set up yet.
@@ -412,6 +416,8 @@ Source files
 - **Incremental refresh** — considered for larger datasets. At this size, a full refresh is still the right call.
 - **Multi-user RLS testing** — assign Entra ID security groups and check role behaviour across separate accounts.
 - **Move `Dim_UserDepartmentMap` into the Warehouse** — replacing the manual table with a properly governed one.
+- **Commit the SQL-layer RLS experiment as Warehouse objects** — the predicate function, dimension and fact security policies, and the mapping table it depends on, currently exist only as tested SQL shown in this README, not as committed project artefacts.
+- **Complete a consistent staging → curated load path for all dimensions** — currently only the fact load is coded; see Known Limitations.
 - **Automated refresh monitoring and alerting** — beyond the quarantine logic already built, for real production visibility.
 
 </details>
