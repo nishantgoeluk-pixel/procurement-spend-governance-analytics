@@ -1,0 +1,911 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "DelimitedTextSource",
+            "formatSettings": {
+              "type": "DelimitedTextReadSettings"
+            },
+            "storeSettings": {
+              "type": "FileServerReadSettings",
+              "recursive": true,
+              "enablePartitionDiscovery": false
+            },
+            "datasetSettings": {
+              "type": "DelimitedText",
+              "typeProperties": {
+                "location": {
+                  "type": "FileServerLocation",
+                  "fileName": "Fact_Spend.csv"
+                },
+                "columnDelimiter": ",",
+                "quoteChar": "\"",
+                "escapeChar": "\\",
+                "firstRowAsHeader": true
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "62aa7c70-06dc-48ff-98df-c9a43dc0b384"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "SqlServerSink",
+            "preCopyScript": "DELETE FROM stg.Fact_Spend_Raw;",
+            "sqlWriterUseTableLock": false,
+            "writeBehavior": "insert",
+            "datasetSettings": {
+              "type": "SqlServerTable",
+              "typeProperties": {
+                "schema": "stg",
+                "table": "Fact_Spend_Raw",
+                "database": "procurement-spend-wh"
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "d0bace86-e4d7-4ce3-8861-142b7617dec8"
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "mappings": [
+              {
+                "source": {
+                  "name": "TransactionID",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "TransactionID",
+                  "physicalType": "nvarchar",
+                  "length": "20"
+                }
+              },
+              {
+                "source": {
+                  "name": "DateKey",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "DateKey",
+                  "physicalType": "nvarchar",
+                  "length": "20"
+                }
+              },
+              {
+                "source": {
+                  "name": "SupplierKey",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "SupplierKey",
+                  "physicalType": "nvarchar",
+                  "length": "10"
+                }
+              },
+              {
+                "source": {
+                  "name": "DepartmentKey",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "DepartmentKey",
+                  "physicalType": "nvarchar",
+                  "length": "10"
+                }
+              },
+              {
+                "source": {
+                  "name": "CostCategoryKey",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "CostCategoryKey",
+                  "physicalType": "nvarchar",
+                  "length": "10"
+                }
+              },
+              {
+                "source": {
+                  "name": "InvoiceAmount",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "InvoiceAmount",
+                  "physicalType": "nvarchar",
+                  "length": "30"
+                }
+              },
+              {
+                "source": {
+                  "name": "BudgetAmount",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "BudgetAmount",
+                  "physicalType": "nvarchar",
+                  "length": "30"
+                }
+              },
+              {
+                "source": {
+                  "name": "VarianceAmount",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "VarianceAmount",
+                  "physicalType": "nvarchar",
+                  "length": "30"
+                }
+              },
+              {
+                "source": {
+                  "name": "InvoiceNumber",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "InvoiceNumber",
+                  "physicalType": "nvarchar",
+                  "length": "20"
+                }
+              },
+              {
+                "source": {
+                  "name": "PONumber",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "PONumber",
+                  "physicalType": "nvarchar",
+                  "length": "20"
+                }
+              },
+              {
+                "source": {
+                  "name": "PaymentStatus",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "PaymentStatus",
+                  "physicalType": "nvarchar",
+                  "length": "20"
+                }
+              },
+              {
+                "source": {
+                  "name": "ApprovedFlag",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "ApprovedFlag",
+                  "physicalType": "nvarchar",
+                  "length": "3"
+                }
+              },
+              {
+                "source": {
+                  "name": "POFlag",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "POFlag",
+                  "physicalType": "nvarchar",
+                  "length": "3"
+                }
+              },
+              {
+                "source": {
+                  "name": "ProcessingDays",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "ProcessingDays",
+                  "physicalType": "nvarchar",
+                  "length": "10"
+                }
+              }
+            ],
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Copy_Fact_Spend",
+        "dependsOn": []
+      },
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "DelimitedTextSource",
+            "formatSettings": {
+              "type": "DelimitedTextReadSettings"
+            },
+            "storeSettings": {
+              "type": "FileServerReadSettings",
+              "recursive": true,
+              "enablePartitionDiscovery": false
+            },
+            "datasetSettings": {
+              "type": "DelimitedText",
+              "typeProperties": {
+                "location": {
+                  "type": "FileServerLocation",
+                  "fileName": "Dim_Date.csv"
+                },
+                "columnDelimiter": ",",
+                "quoteChar": "\"",
+                "escapeChar": "\\",
+                "firstRowAsHeader": true
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "62aa7c70-06dc-48ff-98df-c9a43dc0b384"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "SqlServerSink",
+            "preCopyScript": "DELETE FROM stg.Dim_Date_Raw;",
+            "sqlWriterUseTableLock": false,
+            "writeBehavior": "insert",
+            "datasetSettings": {
+              "type": "SqlServerTable",
+              "typeProperties": {
+                "schema": "stg",
+                "table": "Dim_Date_Raw",
+                "database": "procurement-spend-wh"
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "d0bace86-e4d7-4ce3-8861-142b7617dec8"
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "mappings": [
+              {
+                "source": {
+                  "name": "DateKey",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "DateKey",
+                  "physicalType": "nvarchar",
+                  "length": "20"
+                }
+              },
+              {
+                "source": {
+                  "name": "FullDate",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "FullDate",
+                  "physicalType": "nvarchar",
+                  "length": "20"
+                }
+              },
+              {
+                "source": {
+                  "name": "Year",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "Year",
+                  "physicalType": "nvarchar",
+                  "length": "10"
+                }
+              },
+              {
+                "source": {
+                  "name": "Quarter",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "Quarter",
+                  "physicalType": "nvarchar",
+                  "length": "2"
+                }
+              },
+              {
+                "source": {
+                  "name": "QuarterNum",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "QuarterNum",
+                  "physicalType": "nvarchar",
+                  "length": "10"
+                }
+              },
+              {
+                "source": {
+                  "name": "Month",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "Month",
+                  "physicalType": "nvarchar",
+                  "length": "20"
+                }
+              },
+              {
+                "source": {
+                  "name": "MonthNum",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "MonthNum",
+                  "physicalType": "nvarchar",
+                  "length": "10"
+                }
+              },
+              {
+                "source": {
+                  "name": "YearMonth",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "YearMonth",
+                  "physicalType": "nvarchar",
+                  "length": "7"
+                }
+              },
+              {
+                "source": {
+                  "name": "WeekNum",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "WeekNum",
+                  "physicalType": "nvarchar",
+                  "length": "10"
+                }
+              },
+              {
+                "source": {
+                  "name": "DayOfWeek",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "DayOfWeek",
+                  "physicalType": "nvarchar",
+                  "length": "10"
+                }
+              },
+              {
+                "source": {
+                  "name": "IsWeekend",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "IsWeekend",
+                  "physicalType": "nvarchar",
+                  "length": "5"
+                }
+              },
+              {
+                "source": {
+                  "name": "FiscalYear",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "FiscalYear",
+                  "physicalType": "nvarchar",
+                  "length": "6"
+                }
+              },
+              {
+                "source": {
+                  "name": "FiscalQuarter",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "FiscalQuarter",
+                  "physicalType": "nvarchar",
+                  "length": "4"
+                }
+              }
+            ],
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Copy_Dim_Date",
+        "dependsOn": []
+      },
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "DelimitedTextSource",
+            "formatSettings": {
+              "type": "DelimitedTextReadSettings"
+            },
+            "storeSettings": {
+              "type": "FileServerReadSettings",
+              "recursive": true,
+              "enablePartitionDiscovery": false
+            },
+            "datasetSettings": {
+              "type": "DelimitedText",
+              "typeProperties": {
+                "location": {
+                  "type": "FileServerLocation",
+                  "fileName": "Dim_Department.csv"
+                },
+                "columnDelimiter": ",",
+                "quoteChar": "\"",
+                "escapeChar": "\\",
+                "firstRowAsHeader": true
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "62aa7c70-06dc-48ff-98df-c9a43dc0b384"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "SqlServerSink",
+            "preCopyScript": "DELETE FROM stg.Dim_Department_Raw;",
+            "sqlWriterUseTableLock": false,
+            "writeBehavior": "insert",
+            "datasetSettings": {
+              "type": "SqlServerTable",
+              "typeProperties": {
+                "schema": "stg",
+                "table": "Dim_Department_Raw",
+                "database": "procurement-spend-wh"
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "d0bace86-e4d7-4ce3-8861-142b7617dec8"
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "mappings": [
+              {
+                "source": {
+                  "name": "DepartmentKey",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "DepartmentKey",
+                  "physicalType": "nvarchar",
+                  "length": "10"
+                }
+              },
+              {
+                "source": {
+                  "name": "DepartmentName",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "DepartmentName",
+                  "physicalType": "nvarchar",
+                  "length": "100"
+                }
+              },
+              {
+                "source": {
+                  "name": "Division",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "Division",
+                  "physicalType": "nvarchar",
+                  "length": "100"
+                }
+              },
+              {
+                "source": {
+                  "name": "CostCentreHead",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "CostCentreHead",
+                  "physicalType": "nvarchar",
+                  "length": "100"
+                }
+              },
+              {
+                "source": {
+                  "name": "Location",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "Location",
+                  "physicalType": "nvarchar",
+                  "length": "100"
+                }
+              },
+              {
+                "source": {
+                  "name": "AnnualBudget",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "AnnualBudget",
+                  "physicalType": "nvarchar",
+                  "length": "30"
+                }
+              }
+            ],
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Copy_Dim_Department",
+        "dependsOn": []
+      },
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "DelimitedTextSource",
+            "formatSettings": {
+              "type": "DelimitedTextReadSettings"
+            },
+            "storeSettings": {
+              "type": "FileServerReadSettings",
+              "recursive": true,
+              "enablePartitionDiscovery": false
+            },
+            "datasetSettings": {
+              "type": "DelimitedText",
+              "typeProperties": {
+                "location": {
+                  "type": "FileServerLocation",
+                  "fileName": "Dim_Supplier.csv"
+                },
+                "columnDelimiter": ",",
+                "quoteChar": "\"",
+                "escapeChar": "\\",
+                "firstRowAsHeader": true
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "62aa7c70-06dc-48ff-98df-c9a43dc0b384"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "SqlServerSink",
+            "preCopyScript": "DELETE FROM stg.Dim_Supplier_Raw;",
+            "sqlWriterUseTableLock": false,
+            "writeBehavior": "insert",
+            "datasetSettings": {
+              "type": "SqlServerTable",
+              "typeProperties": {
+                "schema": "stg",
+                "table": "Dim_Supplier_Raw",
+                "database": "procurement-spend-wh"
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "d0bace86-e4d7-4ce3-8861-142b7617dec8"
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "mappings": [
+              {
+                "source": {
+                  "name": "SupplierKey",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "SupplierKey",
+                  "physicalType": "nvarchar",
+                  "length": "10"
+                }
+              },
+              {
+                "source": {
+                  "name": "SupplierName",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "SupplierName",
+                  "physicalType": "nvarchar",
+                  "length": "100"
+                }
+              },
+              {
+                "source": {
+                  "name": "Category",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "Category",
+                  "physicalType": "nvarchar",
+                  "length": "50"
+                }
+              },
+              {
+                "source": {
+                  "name": "Country",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "Country",
+                  "physicalType": "nvarchar",
+                  "length": "50"
+                }
+              },
+              {
+                "source": {
+                  "name": "Status",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "Status",
+                  "physicalType": "nvarchar",
+                  "length": "20"
+                }
+              },
+              {
+                "source": {
+                  "name": "SupplierTier",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "SupplierTier",
+                  "physicalType": "nvarchar",
+                  "length": "20"
+                }
+              },
+              {
+                "source": {
+                  "name": "PreferredSupplier",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "PreferredSupplier",
+                  "physicalType": "nvarchar",
+                  "length": "3"
+                }
+              },
+              {
+                "source": {
+                  "name": "ContractExpiry",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "ContractExpiry",
+                  "physicalType": "nvarchar",
+                  "length": "20"
+                }
+              }
+            ],
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Copy_Dim_Supplier",
+        "dependsOn": []
+      },
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "DelimitedTextSource",
+            "formatSettings": {
+              "type": "DelimitedTextReadSettings"
+            },
+            "storeSettings": {
+              "type": "FileServerReadSettings",
+              "recursive": true,
+              "enablePartitionDiscovery": false
+            },
+            "datasetSettings": {
+              "type": "DelimitedText",
+              "typeProperties": {
+                "location": {
+                  "type": "FileServerLocation",
+                  "fileName": "Dim_CostCategory.csv"
+                },
+                "columnDelimiter": ",",
+                "quoteChar": "\"",
+                "escapeChar": "\\",
+                "firstRowAsHeader": true
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "62aa7c70-06dc-48ff-98df-c9a43dc0b384"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "SqlServerSink",
+            "preCopyScript": "DELETE FROM stg.Dim_CostCategory_Raw;",
+            "sqlWriterUseTableLock": false,
+            "writeBehavior": "insert",
+            "datasetSettings": {
+              "type": "SqlServerTable",
+              "typeProperties": {
+                "schema": "stg",
+                "table": "Dim_CostCategory_Raw",
+                "database": "procurement-spend-wh"
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "d0bace86-e4d7-4ce3-8861-142b7617dec8"
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "mappings": [
+              {
+                "source": {
+                  "name": "CostCategoryKey",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "CostCategoryKey",
+                  "physicalType": "nvarchar",
+                  "length": "10"
+                }
+              },
+              {
+                "source": {
+                  "name": "CategoryName",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "CategoryName",
+                  "physicalType": "nvarchar",
+                  "length": "100"
+                }
+              },
+              {
+                "source": {
+                  "name": "SpendType",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "SpendType",
+                  "physicalType": "nvarchar",
+                  "length": "50"
+                }
+              },
+              {
+                "source": {
+                  "name": "BudgetType",
+                  "type": "String",
+                  "physicalType": "String"
+                },
+                "sink": {
+                  "name": "BudgetType",
+                  "physicalType": "nvarchar",
+                  "length": "50"
+                }
+              }
+            ],
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Copy_Dim_CostCategory",
+        "dependsOn": []
+      }
+    ]
+  }
+}
